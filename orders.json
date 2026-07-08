@@ -1,0 +1,886 @@
+[
+  {
+    "id": "TRG-683658",
+    "shippingDetails": {
+      "name": "MADDALA JOEL PREM TEJ",
+      "email": "joelpremtej@gmail.com",
+      "phone": "+916305472006",
+      "address": "52-3-5 Christian Peta",
+      "zip": "520008"
+    },
+    "cart": [
+      {
+        "product": {
+          "id": "prod-6",
+          "name": "Aegean Sea River Serving Board",
+          "category": "Serving Trays",
+          "price": 85,
+          "rating": 4.9,
+          "reviewsCount": 95,
+          "image": "https://images.unsplash.com/photo-1610701596007-11502861dcfa?auto=format&fit=crop&w=600&q=80",
+          "isBestSeller": true,
+          "description": "A beautiful fusion of rustic woodcraft and liquid ocean. This live-edge acacia wood tray features an artistic resin 'river' complete with translucent sea-teal depth and white frothy lace details. Perfect for charcuterie or gourmet spreads.",
+          "dimensions": "18\" x 10\" x 0.8\"",
+          "materials": [
+            "Live-edge Acacia Wood",
+            "Food-Safe Certified Resin",
+            "Black Matte Steel Handles"
+          ],
+          "inStock": true,
+          "features": [
+            "100% food-safe certified finish",
+            "Comfort-grip ergonomic metal handles",
+            "Silicone non-slip feet on bottom"
+          ]
+        },
+        "quantity": 1
+      },
+      {
+        "product": {
+          "id": "prod-5",
+          "name": "White Marble & Gold Leaf Hexagon Clock",
+          "category": "Resin Wall Clocks",
+          "price": 120,
+          "rating": 4.9,
+          "reviewsCount": 39,
+          "image": "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?auto=format&fit=crop&w=600&q=80",
+          "description": "A sleek geometric clock radiating modern luxury. Styled with delicate pearlescent white resin, fine black marble-style veins, and bold streaks of hand-applied gold leaf.",
+          "dimensions": "12\" Point-to-Point Hexagon",
+          "materials": [
+            "Eco-Epoxy Resin",
+            "Gold Leaf",
+            "Silent Quartz Sweep"
+          ],
+          "inStock": true,
+          "features": [
+            "Brushed gold metal hands",
+            "Minimalist hour markers",
+            "Easy battery slot"
+          ]
+        },
+        "quantity": 1
+      }
+    ],
+    "grandTotal": 205,
+    "createdAt": "2026-07-08T22:14:46.884Z",
+    "status": "Curation Requested"
+  },
+  {
+    "id": "TRG-109902",
+    "shippingDetails": {
+      "name": "MADDALA JOEL PREM TEJ",
+      "email": "joelpremtej@gmail.com",
+      "phone": "+916305472006",
+      "address": "52-3-5 Christian Peta",
+      "zip": "520008"
+    },
+    "cart": [
+      {
+        "product": {
+          "id": "prod-6",
+          "name": "Aegean Sea River Serving Board",
+          "category": "Serving Trays",
+          "price": 85,
+          "rating": 4.9,
+          "reviewsCount": 95,
+          "image": "https://images.unsplash.com/photo-1610701596007-11502861dcfa?auto=format&fit=crop&w=600&q=80",
+          "isBestSeller": true,
+          "description": "A beautiful fusion of rustic woodcraft and liquid ocean. This live-edge acacia wood tray features an artistic resin 'river' complete with translucent sea-teal depth and white frothy lace details. Perfect for charcuterie or gourmet spreads.",
+          "dimensions": "18\" x 10\" x 0.8\"",
+          "materials": [
+            "Live-edge Acacia Wood",
+            "Food-Safe Certified Resin",
+            "Black Matte Steel Handles"
+          ],
+          "inStock": true,
+          "features": [
+            "100% food-safe certified finish",
+            "Comfort-grip ergonomic metal handles",
+            "Silicone non-slip feet on bottom"
+          ]
+        },
+        "quantity": 1
+      },
+      {
+        "product": {
+          "id": "prod-5",
+          "name": "White Marble & Gold Leaf Hexagon Clock",
+          "category": "Resin Wall Clocks",
+          "price": 120,
+          "rating": 4.9,
+          "reviewsCount": 39,
+          "image": "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?auto=format&fit=crop&w=600&q=80",
+          "description": "A sleek geometric clock radiating modern luxury. Styled with delicate pearlescent white resin, fine black marble-style veins, and bold streaks of hand-applied gold leaf.",
+          "dimensions": "12\" Point-to-Point Hexagon",
+          "materials": [
+            "Eco-Epoxy Resin",
+            "Gold Leaf",
+            "Silent Quartz Sweep"
+          ],
+          "inStock": true,
+          "features": [
+            "Brushed gold metal hands",
+            "Minimalist hour markers",
+            "Easy battery slot"
+          ]
+        },
+        "quantity": 1
+      }
+    ],
+    "grandTotal": 205,
+    "createdAt": "2026-07-08T22:11:49.980Z",
+    "status": "Curation Requested"
+  },
+  {
+    "id": "TRG-139935",
+    "shippingDetails": {
+      "name": "MADDALA JOEL PREM TEJ",
+      "email": "joelpremtej@gmail.com",
+      "phone": "+916305472006",
+      "address": "52-3-5 Christian Peta",
+      "zip": "520008"
+    },
+    "cart": [
+      {
+        "product": {
+          "id": "prod-2",
+          "name": "Ocean Tide Teal Shimmer Keychain",
+          "category": "Resin Keychains",
+          "price": 14.5,
+          "rating": 4.7,
+          "reviewsCount": 56,
+          "image": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80",
+          "description": "Capturing the serene waves of coastal tide pools in a miniature pocket charm. Made with turquoise mica powder, titanium white wave cells, and actual white sand from pristine shores.",
+          "dimensions": "2.0\" Circular Ring",
+          "materials": [
+            "Mica Pigments",
+            "Beach Sand",
+            "Resin",
+            "Stainless Steel"
+          ],
+          "inStock": true,
+          "features": [
+            "Authentic ocean cells",
+            "Double-sided dome finish",
+            "Waterproof"
+          ]
+        },
+        "quantity": 1
+      },
+      {
+        "product": {
+          "id": "prod-1",
+          "name": "Golden Botanical Monogram Keychain",
+          "category": "Resin Keychains",
+          "price": 18,
+          "rating": 4.9,
+          "reviewsCount": 142,
+          "image": "https://images.unsplash.com/photo-1621259182978-f09e5122ae8e?auto=format&fit=crop&w=600&q=80",
+          "isBestSeller": true,
+          "description": "A custom letter keychain featuring hand-pressed baby's breath, dried rose petals, and genuine 24k gold leaf flakes embedded in high-gloss, UV-resistant crystal resin. Fitted with a luxurious gold clasp.",
+          "dimensions": "1.5\" x 1.5\" (varies by letter)",
+          "materials": [
+            "UV-Resistant Resin",
+            "Dried Florals",
+            "24k Gold Foil",
+            "Brass Hardware"
+          ],
+          "inStock": true,
+          "features": [
+            "Scratch-resistant glaze",
+            "Free custom monogram",
+            "Hypoallergenic keychain clasp"
+          ]
+        },
+        "quantity": 1
+      },
+      {
+        "product": {
+          "id": "prod-8",
+          "name": "Preserved Moss & Fern Teardrop Pendant",
+          "category": "Jewelry",
+          "price": 28,
+          "rating": 4.9,
+          "reviewsCount": 64,
+          "image": "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=600&q=80",
+          "description": "A wearable token of the forest. Features delicate maidenhair fern fronds and emerald green star moss preserved in a crystal-clear drop of high-grade resin, set in an elegant 18k gold plated teardrop frame.",
+          "dimensions": "1.2\" Pendant (with 18\" Adjustable Chain)",
+          "materials": [
+            "Pressed Fern & Moss",
+            "18k Gold Plated Brass",
+            "Eco-Friendly Jewelry Resin"
+          ],
+          "inStock": true,
+          "features": [
+            "Lead-free and nickel-free chain",
+            "Stays vibrant forever",
+            "Comes in premium linen gift box"
+          ]
+        },
+        "quantity": 1
+      },
+      {
+        "product": {
+          "id": "prod-7",
+          "name": "Emerald Quartz Geode Coaster Set",
+          "category": "Coasters",
+          "price": 36,
+          "rating": 4.8,
+          "reviewsCount": 210,
+          "image": "https://images.unsplash.com/photo-1603006905003-be475563bc59?auto=format&fit=crop&w=600&q=80",
+          "isBestSeller": true,
+          "description": "A set of four breathtaking hand-poured geode coasters replicating the crystallization of emerald gemstones. Outlined with stunning hand-painted gold gilded rims and embedded with high-grade reflective glitter center clusters.",
+          "dimensions": "4.5\" Diameter (Set of 4)",
+          "materials": [
+            "Pigmented Resin",
+            "Gilded Gold Paint",
+            "Faux Crystal Glitters",
+            "Protective Clear Rubber Bumpers"
+          ],
+          "inStock": true,
+          "features": [
+            "Heat resistant up to 140°F/60°C",
+            "Scratch-resistant crystal top layer",
+            "Includes beautiful gold metal holder"
+          ]
+        },
+        "quantity": 1
+      },
+      {
+        "product": {
+          "id": "prod-12",
+          "name": "Bespoke Bridal Bouquet Preservation Block",
+          "category": "Custom Gifts",
+          "price": 180,
+          "rating": 5,
+          "reviewsCount": 155,
+          "image": "https://images.unsplash.com/photo-1513201099705-a9746e1e201f?auto=format&fit=crop&w=600&q=80",
+          "isBestSeller": true,
+          "description": "Keep your wedding memories alive forever. Send us your bouquet, and we will carefully dry the flowers using specialized silica gel, then cast them in a massive, heavy, bubble-free clear crystal cube or hexagon resin block.",
+          "dimensions": "6\" x 6\" x 3\" (Weighted cube)",
+          "materials": [
+            "Customer's Dried Flowers",
+            "Ultra-Clear Deep Pour Cast Resin",
+            "UV-Resistant Protective Sealant"
+          ],
+          "inStock": true,
+          "features": [
+            "Advanced multi-layer bubble removal",
+            "Guaranteed anti-yellowing formulation",
+            "Includes custom maple wood LED display stand"
+          ]
+        },
+        "quantity": 1
+      },
+      {
+        "product": {
+          "id": "prod-11",
+          "name": "Golden Hour Iridescent Ring Dish",
+          "category": "Home Décor",
+          "price": 22,
+          "rating": 4.7,
+          "reviewsCount": 32,
+          "image": "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80",
+          "description": "A shimmering, iridescent shell-shaped dish designed to cradle your daily jewelry. Cast with specialized color-shifting pearlescent flakes that glimmer beautifully under any warm light.",
+          "dimensions": "4\" x 4\" x 0.8\"",
+          "materials": [
+            "Iridescent Pearlescent Pigments",
+            "Clear Epoxy Resin"
+          ],
+          "inStock": true,
+          "features": [
+            "Water-resistant, perfect for bathroom vanity",
+            "Smooth rounded edges",
+            "Soft felt base pads"
+          ]
+        },
+        "quantity": 1
+      },
+      {
+        "product": {
+          "id": "prod-6",
+          "name": "Aegean Sea River Serving Board",
+          "category": "Serving Trays",
+          "price": 85,
+          "rating": 4.9,
+          "reviewsCount": 95,
+          "image": "https://images.unsplash.com/photo-1610701596007-11502861dcfa?auto=format&fit=crop&w=600&q=80",
+          "isBestSeller": true,
+          "description": "A beautiful fusion of rustic woodcraft and liquid ocean. This live-edge acacia wood tray features an artistic resin 'river' complete with translucent sea-teal depth and white frothy lace details. Perfect for charcuterie or gourmet spreads.",
+          "dimensions": "18\" x 10\" x 0.8\"",
+          "materials": [
+            "Live-edge Acacia Wood",
+            "Food-Safe Certified Resin",
+            "Black Matte Steel Handles"
+          ],
+          "inStock": true,
+          "features": [
+            "100% food-safe certified finish",
+            "Comfort-grip ergonomic metal handles",
+            "Silicone non-slip feet on bottom"
+          ]
+        },
+        "quantity": 1
+      }
+    ],
+    "grandTotal": 383.5,
+    "createdAt": "2026-07-08T22:10:08.838Z",
+    "status": "Curation Requested"
+  },
+  {
+    "id": "TRG-290720",
+    "shippingDetails": {
+      "name": "MADDALA JOEL PREM TEJ",
+      "email": "joelpremtej@gmail.com",
+      "phone": "+916305472006",
+      "address": "52-3-5 Christian Peta",
+      "zip": "520008"
+    },
+    "cart": [
+      {
+        "product": {
+          "id": "prod-2",
+          "name": "Ocean Tide Teal Shimmer Keychain",
+          "category": "Resin Keychains",
+          "price": 14.5,
+          "rating": 4.7,
+          "reviewsCount": 56,
+          "image": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80",
+          "description": "Capturing the serene waves of coastal tide pools in a miniature pocket charm. Made with turquoise mica powder, titanium white wave cells, and actual white sand from pristine shores.",
+          "dimensions": "2.0\" Circular Ring",
+          "materials": [
+            "Mica Pigments",
+            "Beach Sand",
+            "Resin",
+            "Stainless Steel"
+          ],
+          "inStock": true,
+          "features": [
+            "Authentic ocean cells",
+            "Double-sided dome finish",
+            "Waterproof"
+          ]
+        },
+        "quantity": 1
+      },
+      {
+        "product": {
+          "id": "prod-1",
+          "name": "Golden Botanical Monogram Keychain",
+          "category": "Resin Keychains",
+          "price": 18,
+          "rating": 4.9,
+          "reviewsCount": 142,
+          "image": "https://images.unsplash.com/photo-1621259182978-f09e5122ae8e?auto=format&fit=crop&w=600&q=80",
+          "isBestSeller": true,
+          "description": "A custom letter keychain featuring hand-pressed baby's breath, dried rose petals, and genuine 24k gold leaf flakes embedded in high-gloss, UV-resistant crystal resin. Fitted with a luxurious gold clasp.",
+          "dimensions": "1.5\" x 1.5\" (varies by letter)",
+          "materials": [
+            "UV-Resistant Resin",
+            "Dried Florals",
+            "24k Gold Foil",
+            "Brass Hardware"
+          ],
+          "inStock": true,
+          "features": [
+            "Scratch-resistant glaze",
+            "Free custom monogram",
+            "Hypoallergenic keychain clasp"
+          ]
+        },
+        "quantity": 1
+      }
+    ],
+    "grandTotal": 42.45,
+    "createdAt": "2026-07-08T22:08:31.817Z",
+    "status": "Curation Requested"
+  },
+  {
+    "id": "TRG-301595",
+    "shippingDetails": {
+      "name": "MADDALA JOEL PREM TEJ",
+      "email": "joelpremtej@gmail.com",
+      "phone": "+916305472006",
+      "address": "52-3-5 Christian Peta",
+      "zip": "520008"
+    },
+    "cart": [
+      {
+        "product": {
+          "id": "prod-2",
+          "name": "Ocean Tide Teal Shimmer Keychain",
+          "category": "Resin Keychains",
+          "price": 14.5,
+          "rating": 4.7,
+          "reviewsCount": 56,
+          "image": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80",
+          "description": "Capturing the serene waves of coastal tide pools in a miniature pocket charm. Made with turquoise mica powder, titanium white wave cells, and actual white sand from pristine shores.",
+          "dimensions": "2.0\" Circular Ring",
+          "materials": [
+            "Mica Pigments",
+            "Beach Sand",
+            "Resin",
+            "Stainless Steel"
+          ],
+          "inStock": true,
+          "features": [
+            "Authentic ocean cells",
+            "Double-sided dome finish",
+            "Waterproof"
+          ]
+        },
+        "quantity": 1
+      },
+      {
+        "product": {
+          "id": "prod-1",
+          "name": "Golden Botanical Monogram Keychain",
+          "category": "Resin Keychains",
+          "price": 18,
+          "rating": 4.9,
+          "reviewsCount": 142,
+          "image": "https://images.unsplash.com/photo-1621259182978-f09e5122ae8e?auto=format&fit=crop&w=600&q=80",
+          "isBestSeller": true,
+          "description": "A custom letter keychain featuring hand-pressed baby's breath, dried rose petals, and genuine 24k gold leaf flakes embedded in high-gloss, UV-resistant crystal resin. Fitted with a luxurious gold clasp.",
+          "dimensions": "1.5\" x 1.5\" (varies by letter)",
+          "materials": [
+            "UV-Resistant Resin",
+            "Dried Florals",
+            "24k Gold Foil",
+            "Brass Hardware"
+          ],
+          "inStock": true,
+          "features": [
+            "Scratch-resistant glaze",
+            "Free custom monogram",
+            "Hypoallergenic keychain clasp"
+          ]
+        },
+        "quantity": 1
+      }
+    ],
+    "grandTotal": 42.45,
+    "createdAt": "2026-07-08T22:07:34.830Z",
+    "status": "Curation Requested"
+  },
+  {
+    "id": "TRG-712026",
+    "shippingDetails": {
+      "name": "MADDALA JOEL PREM TEJ",
+      "email": "joelpremtej@gmail.com",
+      "phone": "+916305472006",
+      "address": "52-3-5 Christian Peta",
+      "zip": "520008"
+    },
+    "cart": [
+      {
+        "product": {
+          "id": "prod-2",
+          "name": "Ocean Tide Teal Shimmer Keychain",
+          "category": "Resin Keychains",
+          "price": 14.5,
+          "rating": 4.7,
+          "reviewsCount": 56,
+          "image": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80",
+          "description": "Capturing the serene waves of coastal tide pools in a miniature pocket charm. Made with turquoise mica powder, titanium white wave cells, and actual white sand from pristine shores.",
+          "dimensions": "2.0\" Circular Ring",
+          "materials": [
+            "Mica Pigments",
+            "Beach Sand",
+            "Resin",
+            "Stainless Steel"
+          ],
+          "inStock": true,
+          "features": [
+            "Authentic ocean cells",
+            "Double-sided dome finish",
+            "Waterproof"
+          ]
+        },
+        "quantity": 2
+      },
+      {
+        "product": {
+          "id": "prod-1",
+          "name": "Golden Botanical Monogram Keychain",
+          "category": "Resin Keychains",
+          "price": 18,
+          "rating": 4.9,
+          "reviewsCount": 142,
+          "image": "https://images.unsplash.com/photo-1621259182978-f09e5122ae8e?auto=format&fit=crop&w=600&q=80",
+          "isBestSeller": true,
+          "description": "A custom letter keychain featuring hand-pressed baby's breath, dried rose petals, and genuine 24k gold leaf flakes embedded in high-gloss, UV-resistant crystal resin. Fitted with a luxurious gold clasp.",
+          "dimensions": "1.5\" x 1.5\" (varies by letter)",
+          "materials": [
+            "UV-Resistant Resin",
+            "Dried Florals",
+            "24k Gold Foil",
+            "Brass Hardware"
+          ],
+          "inStock": true,
+          "features": [
+            "Scratch-resistant glaze",
+            "Free custom monogram",
+            "Hypoallergenic keychain clasp"
+          ]
+        },
+        "quantity": 1
+      }
+    ],
+    "grandTotal": 56.95,
+    "createdAt": "2026-07-08T21:25:10.315Z",
+    "status": "Curation Requested"
+  },
+  {
+    "id": "TRG-713344",
+    "shippingDetails": {
+      "name": "MADDALA JOEL PREM TEJ",
+      "email": "joelpremtej@gmail.com",
+      "phone": "+916305472006",
+      "address": "52-3-5 Christian Peta",
+      "zip": "520008"
+    },
+    "cart": [
+      {
+        "product": {
+          "id": "prod-2",
+          "name": "Ocean Tide Teal Shimmer Keychain",
+          "category": "Resin Keychains",
+          "price": 14.5,
+          "rating": 4.7,
+          "reviewsCount": 56,
+          "image": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80",
+          "description": "Capturing the serene waves of coastal tide pools in a miniature pocket charm. Made with turquoise mica powder, titanium white wave cells, and actual white sand from pristine shores.",
+          "dimensions": "2.0\" Circular Ring",
+          "materials": [
+            "Mica Pigments",
+            "Beach Sand",
+            "Resin",
+            "Stainless Steel"
+          ],
+          "inStock": true,
+          "features": [
+            "Authentic ocean cells",
+            "Double-sided dome finish",
+            "Waterproof"
+          ]
+        },
+        "quantity": 1
+      }
+    ],
+    "grandTotal": 24.45,
+    "createdAt": "2026-07-08T21:18:53.432Z",
+    "status": "Curation Requested"
+  },
+  {
+    "id": "TRG-924720",
+    "shippingDetails": {
+      "name": "MADDALA JOEL PREM TEJ",
+      "email": "joelpremtej@gmail.com",
+      "phone": "+916305472006",
+      "address": "52-3-5 Christian Peta",
+      "zip": "520008"
+    },
+    "cart": [
+      {
+        "product": {
+          "id": "prod-2",
+          "name": "Ocean Tide Teal Shimmer Keychain",
+          "category": "Resin Keychains",
+          "price": 14.5,
+          "rating": 4.7,
+          "reviewsCount": 56,
+          "image": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80",
+          "description": "Capturing the serene waves of coastal tide pools in a miniature pocket charm. Made with turquoise mica powder, titanium white wave cells, and actual white sand from pristine shores.",
+          "dimensions": "2.0\" Circular Ring",
+          "materials": [
+            "Mica Pigments",
+            "Beach Sand",
+            "Resin",
+            "Stainless Steel"
+          ],
+          "inStock": true,
+          "features": [
+            "Authentic ocean cells",
+            "Double-sided dome finish",
+            "Waterproof"
+          ]
+        },
+        "quantity": 1
+      },
+      {
+        "product": {
+          "id": "prod-1",
+          "name": "Golden Botanical Monogram Keychain",
+          "category": "Resin Keychains",
+          "price": 18,
+          "rating": 4.9,
+          "reviewsCount": 142,
+          "image": "https://images.unsplash.com/photo-1621259182978-f09e5122ae8e?auto=format&fit=crop&w=600&q=80",
+          "isBestSeller": true,
+          "description": "A custom letter keychain featuring hand-pressed baby's breath, dried rose petals, and genuine 24k gold leaf flakes embedded in high-gloss, UV-resistant crystal resin. Fitted with a luxurious gold clasp.",
+          "dimensions": "1.5\" x 1.5\" (varies by letter)",
+          "materials": [
+            "UV-Resistant Resin",
+            "Dried Florals",
+            "24k Gold Foil",
+            "Brass Hardware"
+          ],
+          "inStock": true,
+          "features": [
+            "Scratch-resistant glaze",
+            "Free custom monogram",
+            "Hypoallergenic keychain clasp"
+          ]
+        },
+        "quantity": 1
+      }
+    ],
+    "grandTotal": 42.45,
+    "createdAt": "2026-07-08T21:13:50.851Z",
+    "status": "Curation Requested"
+  },
+  {
+    "id": "TRG-987669",
+    "shippingDetails": {
+      "name": "MADDALA JOEL PREM TEJ",
+      "email": "joelpremtej@gmail.com",
+      "phone": "+916305472006",
+      "address": "52-3-5 Christian Peta",
+      "zip": "520008"
+    },
+    "cart": [
+      {
+        "product": {
+          "id": "prod-2",
+          "name": "Ocean Tide Teal Shimmer Keychain",
+          "category": "Resin Keychains",
+          "price": 14.5,
+          "rating": 4.7,
+          "reviewsCount": 56,
+          "image": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80",
+          "description": "Capturing the serene waves of coastal tide pools in a miniature pocket charm. Made with turquoise mica powder, titanium white wave cells, and actual white sand from pristine shores.",
+          "dimensions": "2.0\" Circular Ring",
+          "materials": [
+            "Mica Pigments",
+            "Beach Sand",
+            "Resin",
+            "Stainless Steel"
+          ],
+          "inStock": true,
+          "features": [
+            "Authentic ocean cells",
+            "Double-sided dome finish",
+            "Waterproof"
+          ]
+        },
+        "quantity": 1
+      }
+    ],
+    "grandTotal": 24.45,
+    "createdAt": "2026-07-08T21:11:09.969Z",
+    "status": "Curation Requested"
+  },
+  {
+    "id": "TRG-157010",
+    "shippingDetails": {
+      "name": "MADDALA JOEL PREM TEJ",
+      "email": "joelpremtej@gmail.com",
+      "phone": "+916305472006",
+      "address": "52-3-5 Christian Peta",
+      "zip": "520008"
+    },
+    "cart": [
+      {
+        "product": {
+          "id": "prod-7",
+          "name": "Emerald Quartz Geode Coaster Set",
+          "category": "Coasters",
+          "price": 36,
+          "rating": 4.8,
+          "reviewsCount": 210,
+          "image": "https://images.unsplash.com/photo-1603006905003-be475563bc59?auto=format&fit=crop&w=600&q=80",
+          "isBestSeller": true,
+          "description": "A set of four breathtaking hand-poured geode coasters replicating the crystallization of emerald gemstones. Outlined with stunning hand-painted gold gilded rims and embedded with high-grade reflective glitter center clusters.",
+          "dimensions": "4.5\" Diameter (Set of 4)",
+          "materials": [
+            "Pigmented Resin",
+            "Gilded Gold Paint",
+            "Faux Crystal Glitters",
+            "Protective Clear Rubber Bumpers"
+          ],
+          "inStock": true,
+          "features": [
+            "Heat resistant up to 140°F/60°C",
+            "Scratch-resistant crystal top layer",
+            "Includes beautiful gold metal holder"
+          ]
+        },
+        "quantity": 1
+      },
+      {
+        "product": {
+          "id": "prod-8",
+          "name": "Preserved Moss & Fern Teardrop Pendant",
+          "category": "Jewelry",
+          "price": 28,
+          "rating": 4.9,
+          "reviewsCount": 64,
+          "image": "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=600&q=80",
+          "description": "A wearable token of the forest. Features delicate maidenhair fern fronds and emerald green star moss preserved in a crystal-clear drop of high-grade resin, set in an elegant 18k gold plated teardrop frame.",
+          "dimensions": "1.2\" Pendant (with 18\" Adjustable Chain)",
+          "materials": [
+            "Pressed Fern & Moss",
+            "18k Gold Plated Brass",
+            "Eco-Friendly Jewelry Resin"
+          ],
+          "inStock": true,
+          "features": [
+            "Lead-free and nickel-free chain",
+            "Stays vibrant forever",
+            "Comes in premium linen gift box"
+          ]
+        },
+        "quantity": 1
+      }
+    ],
+    "grandTotal": 73.95,
+    "createdAt": "2026-07-08T21:08:07.399Z",
+    "status": "Curation Requested"
+  },
+  {
+    "id": "TRG-636905",
+    "shippingDetails": {
+      "name": "MADDALA JOEL PREM TEJ",
+      "email": "joelpremtej@gmail.com",
+      "phone": "+916305472006",
+      "address": "52-3-5 Christian Peta",
+      "zip": "520008"
+    },
+    "cart": [
+      {
+        "product": {
+          "id": "prod-8",
+          "name": "Preserved Moss & Fern Teardrop Pendant",
+          "category": "Jewelry",
+          "price": 28,
+          "rating": 4.9,
+          "reviewsCount": 64,
+          "image": "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=600&q=80",
+          "description": "A wearable token of the forest. Features delicate maidenhair fern fronds and emerald green star moss preserved in a crystal-clear drop of high-grade resin, set in an elegant 18k gold plated teardrop frame.",
+          "dimensions": "1.2\" Pendant (with 18\" Adjustable Chain)",
+          "materials": [
+            "Pressed Fern & Moss",
+            "18k Gold Plated Brass",
+            "Eco-Friendly Jewelry Resin"
+          ],
+          "inStock": true,
+          "features": [
+            "Lead-free and nickel-free chain",
+            "Stays vibrant forever",
+            "Comes in premium linen gift box"
+          ]
+        },
+        "quantity": 1
+      },
+      {
+        "product": {
+          "id": "prod-7",
+          "name": "Emerald Quartz Geode Coaster Set",
+          "category": "Coasters",
+          "price": 36,
+          "rating": 4.8,
+          "reviewsCount": 210,
+          "image": "https://images.unsplash.com/photo-1603006905003-be475563bc59?auto=format&fit=crop&w=600&q=80",
+          "isBestSeller": true,
+          "description": "A set of four breathtaking hand-poured geode coasters replicating the crystallization of emerald gemstones. Outlined with stunning hand-painted gold gilded rims and embedded with high-grade reflective glitter center clusters.",
+          "dimensions": "4.5\" Diameter (Set of 4)",
+          "materials": [
+            "Pigmented Resin",
+            "Gilded Gold Paint",
+            "Faux Crystal Glitters",
+            "Protective Clear Rubber Bumpers"
+          ],
+          "inStock": true,
+          "features": [
+            "Heat resistant up to 140°F/60°C",
+            "Scratch-resistant crystal top layer",
+            "Includes beautiful gold metal holder"
+          ]
+        },
+        "quantity": 1
+      }
+    ],
+    "grandTotal": 73.95,
+    "createdAt": "2026-07-08T21:06:49.661Z",
+    "status": "Curation Requested"
+  },
+  {
+    "id": "TRG-309347",
+    "shippingDetails": {
+      "name": "MADDALA JOEL PREM TEJ",
+      "email": "joelpremtej@gmail.com",
+      "phone": "+916305472006",
+      "address": "52-3-5 Christian Peta",
+      "zip": "520008"
+    },
+    "cart": [
+      {
+        "product": {
+          "id": "prod-3",
+          "name": "Wildflower Meadows Botanical Photo Frame",
+          "category": "Resin Photo Frames",
+          "price": 42,
+          "rating": 4.8,
+          "reviewsCount": 88,
+          "image": "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&w=600&q=80",
+          "isBestSeller": true,
+          "description": "Bring the tranquility of a spring meadow to your favorite memory. This freestanding frame incorporates pressed daisies, ferns, cornflowers, and elegant gold flakes wrapped around a vintage wooden inner trim.",
+          "dimensions": "5\" x 7\" photo window (Overall: 7\" x 9\")",
+          "materials": [
+            "Hand-pressed Flowers",
+            "Gold Leaf",
+            "Varnished Oak Wood",
+            "Epoxy Resin"
+          ],
+          "inStock": true,
+          "features": [
+            "Sturdy dual-orientation kickstand",
+            "Anti-yellowing UV blocker",
+            "Individually arranged botanicals"
+          ]
+        },
+        "quantity": 1
+      },
+      {
+        "product": {
+          "id": "prod-6",
+          "name": "Aegean Sea River Serving Board",
+          "category": "Serving Trays",
+          "price": 85,
+          "rating": 4.9,
+          "reviewsCount": 95,
+          "image": "https://images.unsplash.com/photo-1610701596007-11502861dcfa?auto=format&fit=crop&w=600&q=80",
+          "isBestSeller": true,
+          "description": "A beautiful fusion of rustic woodcraft and liquid ocean. This live-edge acacia wood tray features an artistic resin 'river' complete with translucent sea-teal depth and white frothy lace details. Perfect for charcuterie or gourmet spreads.",
+          "dimensions": "18\" x 10\" x 0.8\"",
+          "materials": [
+            "Live-edge Acacia Wood",
+            "Food-Safe Certified Resin",
+            "Black Matte Steel Handles"
+          ],
+          "inStock": true,
+          "features": [
+            "100% food-safe certified finish",
+            "Comfort-grip ergonomic metal handles",
+            "Silicone non-slip feet on bottom"
+          ]
+        },
+        "quantity": 1
+      }
+    ],
+    "grandTotal": 127,
+    "createdAt": "2026-07-08T21:02:51.086Z",
+    "status": "Curation Requested"
+  }
+]
