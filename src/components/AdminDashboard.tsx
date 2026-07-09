@@ -38,24 +38,56 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"inquiries" | "orders" | "analytics">("inquiries");
   const [filterStatus, setFilterStatus] = useState("All");
+  const [supabaseStatus, setSupabaseStatus] = useState<any | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [showSetupSql, setShowSetupSql] = useState(false);
 
   // Detail Modal target
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const [detailType, setDetailType] = useState<"inquiry" | "order" | null>(null);
 
+  // Deletion and reset confirmation states
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [resetConfirm, setResetConfirm] = useState(false);
+
   // Fetch admin data
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [inqRes, ordRes] = await Promise.all([
-        fetch("/api/admin/inquiries"),
-        fetch("/api/admin/orders")
-      ]);
-      if (inqRes.ok && ordRes.ok) {
-        const inqData = await inqRes.json();
-        const ordData = await ordRes.json();
-        setInquiries(inqData);
-        setOrders(ordData);
+      // 1. Fetch Inquiries
+      try {
+        const inqRes = await fetch("/api/admin/inquiries");
+        if (inqRes.ok) {
+          const inqData = await inqRes.ok ? await inqRes.json() : [];
+          setInquiries(inqData);
+        }
+      } catch (err) {
+        console.error("Error fetching inquiries:", err);
+      }
+
+      // 2. Fetch Orders
+      try {
+        const ordRes = await fetch("/api/admin/orders");
+        if (ordRes.ok) {
+          const ordData = await ordRes.ok ? await ordRes.json() : [];
+          setOrders(ordData);
+        }
+      } catch (err) {
+        console.error("Error fetching orders:", err);
+      }
+
+      // 3. Fetch Supabase Status
+      try {
+        const dbRes = await fetch("/api/admin/supabase-status");
+        if (dbRes && dbRes.ok) {
+          const dbData = await dbRes.json();
+          setSupabaseStatus(dbData);
+          if (dbData.initialized && (!dbData.ordersTableOk || !dbData.inquiriesTableOk)) {
+            setShowSetupSql(true);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching Supabase status:", err);
       }
     } catch (err) {
       console.error("Error fetching admin data:", err);
@@ -64,9 +96,45 @@ export default function AdminDashboard() {
     }
   };
 
+  // Sync now action
+  const handleSyncNow = async () => {
+    setSyncing(true);
+    try {
+      const res = await fetch("/api/admin/sync-now", {
+        method: "POST",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          showToast(
+            "Sync Successful",
+            `Successfully synced ${data.syncedOrders} orders and ${data.syncedInquiries} inquiries to Supabase!`
+          );
+          await fetchData();
+        } else {
+          showToast("Sync Error", data.error || "Failed to sync records.");
+        }
+      } else {
+        showToast("Sync Error", "Server returned an error status during sync.");
+      }
+    } catch (err) {
+      console.error("Error running sync:", err);
+      showToast("Sync Error", "Could not connect to the sync endpoint.");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   useEffect(() => {
     if (isAdminOpen && isAuthenticated) {
       fetchData();
+
+      // Real-time polling to keep the admin dashboard inquiries and orders perfectly updated
+      const interval = setInterval(() => {
+        fetchData();
+      }, 5000);
+
+      return () => clearInterval(interval);
     }
   }, [isAdminOpen, isAuthenticated]);
 
@@ -124,21 +192,50 @@ export default function AdminDashboard() {
     }
   };
 
+  // Delete single record from backend
+  const handleDeleteSingleItem = async (id: string, type: "order" | "inquiry") => {
+    try {
+      const res = await fetch("/api/admin/delete-item", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, type })
+      });
+      if (res.ok) {
+        if (type === "order") {
+          setOrders(prev => prev.filter(o => o.id !== id));
+        } else {
+          setInquiries(prev => prev.filter(i => i.id !== id));
+        }
+        if (selectedItem && selectedItem.id === id) {
+          setSelectedItem(null);
+          setDetailType(null);
+        }
+        setDeleteConfirmId(null);
+        showToast("Record Deleted", `Successfully removed ${type} record ${id}.`);
+      } else {
+        const errData = await res.json();
+        showToast("Deletion Failed", errData.error || "Could not delete record.");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Deletion Error", "A network error occurred while deleting.");
+    }
+  };
+
   // Reset database logs
   const handleResetDatabase = async () => {
-    if (!window.confirm("Are you sure you want to clear all inquiries and order history from the server? This is irreversible.")) {
-      return;
-    }
     try {
       const res = await fetch("/api/admin/clear", { method: "DELETE" });
       if (res.ok) {
         setInquiries([]);
         setOrders([]);
         setSelectedItem(null);
+        setResetConfirm(false);
         showToast("Database Cleared", "Local log files have been reset.");
       }
     } catch (err) {
       console.error(err);
+      showToast("Reset Error", "A network error occurred during reset.");
     }
   };
 
@@ -353,18 +450,208 @@ export default function AdminDashboard() {
                   </button>
 
                   {/* Clear button */}
-                  <button
-                    onClick={handleResetDatabase}
-                    className="p-1.5 border border-red-200 text-red-500 hover:bg-red-50 rounded-[2px] transition-colors cursor-pointer"
-                    title="Clear Database Logs"
-                  >
-                    <Trash className="w-3.5 h-3.5" />
-                  </button>
+                  {resetConfirm ? (
+                    <div className="flex items-center gap-2 border border-red-200 bg-red-50/50 p-1 rounded-[2px]">
+                      <span className="text-[9px] text-red-600 font-bold uppercase">Reset?</span>
+                      <button
+                        onClick={handleResetDatabase}
+                        className="text-[9px] font-bold bg-red-600 hover:bg-red-700 text-white px-1.5 py-0.5 rounded-[2px] cursor-pointer"
+                      >
+                        Yes
+                      </button>
+                      <button
+                        onClick={() => setResetConfirm(false)}
+                        className="text-[9px] font-bold bg-white border border-brand-sand hover:bg-[#FAF8F5] text-gray-700 px-1.5 py-0.5 rounded-[2px] cursor-pointer"
+                      >
+                        No
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setResetConfirm(true)}
+                      className="p-1.5 border border-red-200 text-red-500 hover:bg-red-50 rounded-[2px] transition-colors cursor-pointer"
+                      title="Clear Database Logs"
+                    >
+                      <Trash className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
 
               {/* Live Lists scroll box */}
-              <div className="flex-grow overflow-y-auto p-6 bg-white">
+              <div className="flex-grow overflow-y-auto p-6 bg-white space-y-6">
+                {/* Supabase Integration Advisor */}
+                {supabaseStatus && (
+                  <div className={`p-4 border rounded-[2px] text-xs leading-relaxed space-y-3 ${
+                    supabaseStatus.initialized 
+                      ? (supabaseStatus.ordersTableOk && supabaseStatus.inquiriesTableOk)
+                        ? "bg-green-50/50 border-green-200 text-green-800"
+                        : "bg-amber-50/60 border-amber-300 text-amber-900"
+                      : "bg-gray-50 border-gray-300 text-gray-800"
+                  }`}>
+                    <div className="flex items-center justify-between font-bold text-sm">
+                      <div className="flex items-center gap-1.5">
+                        <span className="relative flex h-2 w-2">
+                          <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                            supabaseStatus.initialized ? "bg-green-400" : "bg-red-400"
+                          }`}></span>
+                          <span className={`relative inline-flex rounded-full h-2 w-2 ${
+                            supabaseStatus.initialized ? "bg-green-500" : "bg-red-500"
+                          }`}></span>
+                        </span>
+                        <span>Supabase Sync Service Status</span>
+                      </div>
+                      <span className="font-mono text-[10px] bg-white/60 px-1.5 py-0.5 rounded border font-bold">
+                        {supabaseStatus.initialized ? "CONNECTED" : "LOCAL MODE ONLY"}
+                      </span>
+                    </div>
+
+                    {!supabaseStatus.initialized ? (
+                      <p className="text-[#5a5a5a]">
+                        The database integration is running in offline local file mode. To sync with your cloud Supabase database, please add your <code className="font-mono bg-gray-100 px-1 rounded text-red-600">VITE_SUPABASE_URL</code> and <code className="font-mono bg-gray-100 px-1 rounded text-red-600">VITE_SUPABASE_ANON_KEY</code> variables in your environment or secrets config.
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-2">
+                          <p className="text-[#5a5a5a]">
+                            Connected to: <code className="font-mono text-[11px] bg-white/70 px-1.5 py-0.5 rounded border">{supabaseStatus.url}</code>
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => setShowSetupSql(!showSetupSql)}
+                            className="text-[10px] text-[#C9A76A] hover:text-[#bfa065] font-bold flex items-center gap-1 cursor-pointer bg-white border border-[#C9A76A]/20 px-2.5 py-1 rounded-[2px] transition-colors hover:bg-[#FAF8F5] uppercase tracking-wider"
+                          >
+                            <span>{showSetupSql ? "Hide SQL Setup" : "Copy/View SQL Setup"}</span>
+                          </button>
+                        </div>
+                        
+                        {/* Table validation */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                          <div className={`p-2.5 rounded-[2px] border ${
+                            supabaseStatus.ordersTableOk ? "bg-green-100/40 border-green-300 text-green-900" : "bg-red-50 border-red-200 text-red-900"
+                          }`}>
+                            <div className="font-bold flex justify-between items-center">
+                              <span>Table: orders</span>
+                              <span className={supabaseStatus.ordersTableOk ? "text-green-700" : "text-red-700"}>
+                                {supabaseStatus.ordersTableOk ? "✓ Active & Connected" : "✗ Missing"}
+                              </span>
+                            </div>
+                            {!supabaseStatus.ordersTableOk && (
+                              <p className="text-[10px] text-red-600/90 mt-1">
+                                Error: {supabaseStatus.errorOrders || "Relation 'orders' does not exist."}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className={`p-2.5 rounded-[2px] border ${
+                            supabaseStatus.inquiriesTableOk ? "bg-green-100/40 border-green-300 text-green-900" : "bg-red-50 border-red-200 text-red-900"
+                          }`}>
+                            <div className="font-bold flex justify-between items-center">
+                              <span>Table: inquiries</span>
+                              <span className={supabaseStatus.inquiriesTableOk ? "text-green-700" : "text-red-700"}>
+                                {supabaseStatus.inquiriesTableOk ? "✓ Active & Connected" : "✗ Missing"}
+                              </span>
+                            </div>
+                            {!supabaseStatus.inquiriesTableOk && (
+                              <p className="text-[10px] text-red-600/90 mt-1">
+                                Error: {supabaseStatus.errorInquiries || "Relation 'inquiries' does not exist."}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {(showSetupSql || !supabaseStatus.ordersTableOk || !supabaseStatus.inquiriesTableOk) && (
+                          <div className="bg-white p-3 rounded border border-amber-200 mt-2 text-[#4a3618] space-y-2 shadow-xs">
+                            <p className="font-bold">⚠️ Action Required: Create Tables in Supabase</p>
+                            <p className="text-[11px]">
+                              Your Supabase database has mismatched, missing, or cached tables. Paste this script into the <strong>SQL Editor</strong> in your Supabase Dashboard to reset and configure them with the correct columns:
+                            </p>
+                            <pre className="text-[10px] font-mono bg-slate-900 text-slate-100 p-2.5 rounded overflow-x-auto select-all max-h-[160px] leading-relaxed">
+{`-- 1. Drop existing conflicting tables to clear old schemas
+DROP TABLE IF EXISTS orders CASCADE;
+DROP TABLE IF EXISTS inquiries CASCADE;
+
+-- 2. Create orders table with correct column structures
+CREATE TABLE orders (
+  id TEXT PRIMARY KEY,
+  shipping_details JSONB,
+  cart JSONB,
+  grand_total NUMERIC,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  status TEXT,
+  order_time TEXT
+);
+
+-- 3. Create inquiries table with correct column structures
+CREATE TABLE inquiries (
+  id TEXT PRIMARY KEY,
+  name TEXT,
+  email TEXT,
+  project_type TEXT,
+  budget TEXT,
+  description TEXT,
+  delivery_date TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  status TEXT,
+  configuration JSONB
+);
+
+-- 4. Enable Row-Level Security (RLS) and define permissive policies
+-- This ensures that even if you have RLS enabled, reads and writes will succeed.
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE inquiries ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow public access to orders" ON orders;
+CREATE POLICY "Allow public access to orders" ON orders FOR ALL TO public USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public access to inquiries" ON inquiries;
+CREATE POLICY "Allow public access to inquiries" ON inquiries FOR ALL TO public USING (true) WITH CHECK (true);
+
+-- 5. Grant explicit table privileges to all API roles
+GRANT ALL ON TABLE orders TO postgres, anon, authenticated, service_role;
+GRANT ALL ON TABLE inquiries TO postgres, anon, authenticated, service_role;
+
+-- 6. Force Supabase PostgREST to reload the API schema cache
+NOTIFY pgrst, 'reload schema';`}
+                            </pre>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const sql = `-- 1. Drop existing conflicting tables to clear old schemas\nDROP TABLE IF EXISTS orders CASCADE;\nDROP TABLE IF EXISTS inquiries CASCADE;\n\n-- 2. Create orders table with correct column structures\nCREATE TABLE orders (\n  id TEXT PRIMARY KEY,\n  shipping_details JSONB,\n  cart JSONB,\n  grand_total NUMERIC,\n  created_at TIMESTAMPTZ DEFAULT NOW(),\n  status TEXT,\n  order_time TEXT\n);\n\n-- 3. Create inquiries table with correct column structures\nCREATE TABLE inquiries (\n  id TEXT PRIMARY KEY,\n  name TEXT,\n  email TEXT,\n  project_type TEXT,\n  budget TEXT,\n  description TEXT,\n  delivery_date TEXT,\n  created_at TIMESTAMPTZ DEFAULT NOW(),\n  status TEXT,\n  configuration JSONB\n);\n\n-- 4. Enable Row-Level Security (RLS) and define permissive policies\nALTER TABLE orders ENABLE ROW LEVEL SECURITY;\nALTER TABLE inquiries ENABLE ROW LEVEL SECURITY;\n\nDROP POLICY IF EXISTS "Allow public access to orders" ON orders;\nCREATE POLICY "Allow public access to orders" ON orders FOR ALL TO public USING (true) WITH CHECK (true);\n\nDROP POLICY IF EXISTS "Allow public access to inquiries" ON inquiries;\nCREATE POLICY "Allow public access to inquiries" ON inquiries FOR ALL TO public USING (true) WITH CHECK (true);\n\n-- 5. Grant explicit table privileges to all API roles\nGRANT ALL ON TABLE orders TO postgres, anon, authenticated, service_role;\nGRANT ALL ON TABLE inquiries TO postgres, anon, authenticated, service_role;\n\n-- 6. Force Supabase PostgREST to reload the API schema cache\nNOTIFY pgrst, 'reload schema';`;
+                                navigator.clipboard.writeText(sql);
+                                showToast("SQL Copied", "Copy the SQL into your Supabase SQL Editor and run it!");
+                              }}
+                              className="px-3 py-1.5 bg-[#C9A76A] hover:bg-[#bfa065] text-white rounded-[2px] font-bold text-[10px] uppercase cursor-pointer"
+                            >
+                              Copy Setup SQL
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Sync controls */}
+                        <div className="pt-3 border-t border-gray-200/60 mt-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                          <div className="text-[11px] text-[#5A5A5A] max-w-sm">
+                            If you have existing orders or inquiries saved locally from offline mode, you can push them directly to Supabase now.
+                          </div>
+                          <button
+                            type="button"
+                            disabled={syncing || !supabaseStatus.ordersTableOk || !supabaseStatus.inquiriesTableOk}
+                            onClick={handleSyncNow}
+                            className={`px-3 py-1.5 text-white rounded-[2px] font-bold text-[10px] uppercase cursor-pointer flex items-center gap-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                              (supabaseStatus.ordersTableOk && supabaseStatus.inquiriesTableOk)
+                                ? "bg-green-600 hover:bg-green-700"
+                                : "bg-gray-400"
+                            }`}
+                          >
+                            <RefreshCw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
+                            <span>{syncing ? "Syncing..." : "Sync Local Data"}</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {loading && inquiries.length === 0 && orders.length === 0 ? (
                   <div className="text-center py-20">
                     <RefreshCw className="w-8 h-8 animate-spin text-[#C9A76A] mx-auto mb-2" />
@@ -395,9 +682,9 @@ export default function AdminDashboard() {
                               <span className="text-[9px] uppercase tracking-widest font-bold text-[#C9A76A] bg-[#FAF8F5] border border-[#C9A76A]/20 px-2 py-0.5 rounded-[2px]">
                                 {inq.projectType}
                               </span>
-                              <span className="text-[10px] text-[#5A5A5A] flex items-center gap-1 font-mono">
+                              <span className="text-[10px] text-[#5A5A5A] flex items-center gap-1.5 font-mono" title="Order / Inquiry Creation Time">
                                 <Calendar className="w-3.5 h-3.5 text-[#5A5A5A]/50" />
-                                {new Date(inq.createdAt).toLocaleDateString()}
+                                {inq.createdAt ? `${new Date(inq.createdAt).toLocaleDateString()} at ${new Date(inq.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : "N/A"}
                               </span>
                             </div>
 
@@ -442,6 +729,34 @@ export default function AdminDashboard() {
                               <Eye className="w-3.5 h-3.5" />
                               <span>Inspect Specs</span>
                             </button>
+
+                            {/* Delete single inquiry */}
+                            {deleteConfirmId === inq.id ? (
+                              <div className="flex items-center gap-2 mt-1 pt-1 border-t border-brand-sand/30 w-full justify-end">
+                                <span className="text-[10px] text-red-600 font-bold">Delete?</span>
+                                <button
+                                  onClick={() => handleDeleteSingleItem(inq.id, "inquiry")}
+                                  className="text-[10px] font-bold bg-red-600 hover:bg-red-700 text-white px-2 py-0.5 rounded-[2px] cursor-pointer"
+                                >
+                                  Yes
+                                </button>
+                                <button
+                                  onClick={() => setDeleteConfirmId(null)}
+                                  className="text-[10px] font-bold bg-[#EAEAEA] hover:bg-[#DDD] text-gray-700 px-2 py-0.5 rounded-[2px] cursor-pointer"
+                                >
+                                  No
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setDeleteConfirmId(inq.id)}
+                                className="text-[11px] font-bold text-red-500 hover:text-red-700 flex items-center gap-1.5 cursor-pointer w-full justify-end mt-1 pt-1 border-t border-brand-sand/30"
+                                title="Delete inquiry permanently"
+                              >
+                                <Trash className="w-3 h-3" />
+                                <span>Delete</span>
+                              </button>
+                            )}
                           </div>
                         </div>
                       ))
@@ -460,9 +775,9 @@ export default function AdminDashboard() {
                               <span className="text-[10px] text-[#C9A76A] font-bold font-mono">
                                 Total: ₹{ord.grandTotal.toFixed(2)}
                               </span>
-                              <span className="text-[10px] text-[#5A5A5A] flex items-center gap-1 font-mono">
+                              <span className="text-[10px] text-[#5A5A5A] flex items-center gap-1.5 font-mono" title="Order / Inquiry Creation Time">
                                 <Calendar className="w-3.5 h-3.5 text-[#5A5A5A]/50" />
-                                {new Date(ord.createdAt).toLocaleDateString()}
+                                {ord.createdAt ? `${new Date(ord.createdAt).toLocaleDateString()} at ${new Date(ord.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : "N/A"}
                               </span>
                             </div>
 
@@ -523,6 +838,34 @@ export default function AdminDashboard() {
                               <Eye className="w-3.5 h-3.5" />
                               <span>Inspect Details</span>
                             </button>
+
+                            {/* Delete single order */}
+                            {deleteConfirmId === ord.id ? (
+                              <div className="flex items-center gap-2 mt-1 pt-1 border-t border-brand-sand/30 w-full justify-end">
+                                <span className="text-[10px] text-red-600 font-bold">Delete?</span>
+                                <button
+                                  onClick={() => handleDeleteSingleItem(ord.id, "order")}
+                                  className="text-[10px] font-bold bg-red-600 hover:bg-red-700 text-white px-2 py-0.5 rounded-[2px] cursor-pointer"
+                                >
+                                  Yes
+                                </button>
+                                <button
+                                  onClick={() => setDeleteConfirmId(null)}
+                                  className="text-[10px] font-bold bg-[#EAEAEA] hover:bg-[#DDD] text-gray-700 px-2 py-0.5 rounded-[2px] cursor-pointer"
+                                >
+                                  No
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setDeleteConfirmId(ord.id)}
+                                className="text-[11px] font-bold text-red-500 hover:text-red-700 flex items-center gap-1.5 cursor-pointer w-full justify-end mt-1 pt-1 border-t border-brand-sand/30"
+                                title="Delete order permanently"
+                              >
+                                <Trash className="w-3 h-3" />
+                                <span>Delete</span>
+                              </button>
+                            )}
                           </div>
                         </div>
                       ))

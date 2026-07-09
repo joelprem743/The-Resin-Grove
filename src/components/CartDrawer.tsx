@@ -23,6 +23,7 @@ export default function CartDrawer() {
     removeFromCart, 
     clearCart,
     user,
+    setAccountOpen,
     showToast
   } = useShop();
 
@@ -36,6 +37,7 @@ export default function CartDrawer() {
   });
   const [createdOrderId, setCreatedOrderId] = useState<string>("");
   const [createdOrderPreviewUrl, setCreatedOrderPreviewUrl] = useState<string>("");
+  const [orderTotal, setOrderTotal] = useState<number>(0);
 
   // Prefill shipping details automatically if the user is logged in
   useEffect(() => {
@@ -77,13 +79,39 @@ export default function CartDrawer() {
 
   const handleStartCheckout = () => {
     if (cart.length === 0) return;
+    if (!user) {
+      showToast("Authentication Required", "Please log in or register to place your custom order!");
+      setCartOpen(false);
+      setAccountOpen(true);
+      return;
+    }
     setCheckoutStep("billing");
   };
 
   const handlePay = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!shippingDetails.name || !shippingDetails.email || !shippingDetails.phone || !shippingDetails.address) return;
+    
+    if (!user) {
+      showToast("Authentication Required", "Please log in or register to place your custom order!");
+      setCheckoutStep("idle");
+      setCartOpen(false);
+      setAccountOpen(true);
+      return;
+    }
 
+    // Force shipping details to match the logged-in user session email exactly to prevent mismatches
+    const finalShippingDetails = {
+      ...shippingDetails,
+      email: user.email,
+      name: shippingDetails.name || user.name || ""
+    };
+
+    if (!finalShippingDetails.name || !finalShippingDetails.email || !finalShippingDetails.phone || !finalShippingDetails.address) {
+      showToast("Incomplete Details", "Please fill in all shipping details to proceed.");
+      return;
+    }
+
+    setOrderTotal(grandTotal);
     setCheckoutStep("processing");
 
     // Post to Express backend API
@@ -91,7 +119,7 @@ export default function CartDrawer() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        shippingDetails,
+        shippingDetails: finalShippingDetails,
         cart,
         grandTotal
       })
@@ -107,6 +135,8 @@ export default function CartDrawer() {
       if (data && data.previewUrl) {
         setCreatedOrderPreviewUrl(data.previewUrl);
       }
+      // Clear cart immediately upon successful checkout!
+      clearCart();
       // Simulate luxury resin pour progress steps for full immersion
       setTimeout(() => {
         setCheckoutStep("success");
@@ -114,12 +144,20 @@ export default function CartDrawer() {
     })
     .catch((err) => {
       console.error("API Order error:", err);
-      // Fallback fallback so user is never blocked
+      // Fallback fallback so user is never blocked, clear cart as well
+      clearCart();
       setTimeout(() => {
         setCheckoutStep("success");
       }, 2000);
     });
   };
+
+  // Automatically reset checkout state if items are in the cart
+  useEffect(() => {
+    if (cart.length > 0 && checkoutStep === "success") {
+      setCheckoutStep("idle");
+    }
+  }, [cart.length, checkoutStep]);
 
   const handleCompleteOrder = () => {
     clearCart();
@@ -136,7 +174,12 @@ export default function CartDrawer() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={() => { if (checkoutStep !== "processing") setCartOpen(false); }}
+          onClick={() => { 
+            if (checkoutStep !== "processing") {
+              setCartOpen(false); 
+              if (checkoutStep === "success") setCheckoutStep("idle");
+            } 
+          }}
           className="absolute inset-0 bg-black/40 backdrop-blur-xs"
         />
 
@@ -156,7 +199,10 @@ export default function CartDrawer() {
                 <h3 className="font-serif text-lg font-normal">Your Shopping Bag</h3>
               </div>
               <button
-                onClick={() => setCartOpen(false)}
+                onClick={() => {
+                  setCartOpen(false);
+                  if (checkoutStep === "success") setCheckoutStep("idle");
+                }}
                 disabled={checkoutStep === "processing"}
                 className="p-2 rounded-[2px] hover:bg-white/10 text-white transition-colors cursor-pointer"
                 aria-label="Close cart"
@@ -293,9 +339,10 @@ export default function CartDrawer() {
                       <input
                         type="email"
                         required
+                        disabled={!!user}
                         value={shippingDetails.email}
                         onChange={(e) => setShippingDetails(prev => ({ ...prev, email: e.target.value }))}
-                        className="w-full bg-white border border-brand-sand rounded-[2px] px-3.5 py-2.5 text-xs text-[#1A1A1A] focus:outline-hidden focus:ring-1 focus:ring-[#C9A76A]"
+                        className={`w-full border border-brand-sand rounded-[2px] px-3.5 py-2.5 text-xs focus:outline-hidden focus:ring-1 focus:ring-[#C9A76A] ${!!user ? 'bg-brand-sand/15 text-[#5A5A5A] cursor-not-allowed' : 'bg-white text-[#1A1A1A]'}`}
                         placeholder="jane@example.com"
                       />
                     </div>
@@ -427,7 +474,7 @@ export default function CartDrawer() {
                   <div className="space-y-2 max-w-xs mx-auto">
                     <button
                       onClick={() => {
-                        const receiptText = `THE RESIN GROVE ORDER RECEIPT\nOrder ID: ${createdOrderId || "TRG-XXXXXX"}\nCustomer: ${shippingDetails.name}\nTotal: ₹${grandTotal.toFixed(2)}`;
+                        const receiptText = `THE RESIN GROVE ORDER RECEIPT\nOrder ID: ${createdOrderId || "TRG-XXXXXX"}\nCustomer: ${shippingDetails.name}\nTotal: ₹${(orderTotal || grandTotal).toFixed(2)}`;
                         navigator.clipboard.writeText(receiptText);
                         showToast("Receipt Copied", "Your order receipt details have been copied to your clipboard!");
                       }}
@@ -446,7 +493,7 @@ export default function CartDrawer() {
                     <div>• Shipping Address: <span className="font-bold">{shippingDetails.address}</span></div>
                     <div className="pt-2 border-t border-brand-sand mt-2 flex justify-between font-bold text-[#1A1A1A] text-xs">
                       <span>Grand Total:</span>
-                      <span>₹{grandTotal.toFixed(2)}</span>
+                      <span>₹{(orderTotal || grandTotal).toFixed(2)}</span>
                     </div>
                   </div>
 

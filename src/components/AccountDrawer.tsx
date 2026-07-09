@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useShop } from "../context/ShopContext";
 import { supabase } from "../lib/supabase";
@@ -152,10 +152,61 @@ export default function AccountDrawer() {
     }
   };
 
-  const pastOrders = [
-    { id: "TRG-8812", date: "June 02, 2026", item: "Emerald Quartz Geode Coaster Set", amount: "₹3,000.00", status: "Delivered" },
-    { id: "TRG-7391", date: "April 15, 2026", item: "Pacific Shore Ocean Wave Clock", amount: "₹12,500.00", status: "Delivered" },
-  ];
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+
+  const getStatusProgress = (status: string) => {
+    switch (status) {
+      case "Curation Requested":
+        return { stage: "Curation", step: 1, percent: 15, desc: "Order submitted, reviewing botanical specimens" };
+      case "Botanical Layout":
+        return { stage: "Layout", step: 2, percent: 35, desc: "Arranging specimens on organic wood base" };
+      case "Resin Pouring":
+      case "In Crafting":
+        return { stage: "Pouring", step: 3, percent: 55, desc: "Bespoke handcrafting & layering premium epoxy resin" };
+      case "Degassing / Curing":
+        return { stage: "Curing", step: 4, percent: 75, desc: "Extracting microbubbles & heat-curing glass layer" };
+      case "Polishing / Finish":
+      case "Shipped":
+        return { stage: "Polishing", step: 5, percent: 90, desc: "Precision polishing, applying natural oils & packaging for shipment" };
+      case "Delivered":
+        return { stage: "Delivered", step: 6, percent: 100, desc: "Your bespoke masterwork has arrived!" };
+      default:
+        return { stage: "Curation", step: 1, percent: 15, desc: "Order submitted, reviewing botanical specimens" };
+    }
+  };
+
+  const fetchUserOrders = async () => {
+    if (!user?.email) return;
+    setLoadingOrders(true);
+    try {
+      const res = await fetch(`/api/user/orders?email=${encodeURIComponent(user.email)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setOrders(data);
+      }
+    } catch (err) {
+      console.error("Error loading user orders:", err);
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isAccountOpen && user?.email) {
+      fetchUserOrders();
+
+      // Real-time polling to keep the collector profile and active curation status perfectly synchronized
+      const interval = setInterval(() => {
+        fetchUserOrders();
+      }, 4000);
+
+      return () => clearInterval(interval);
+    }
+  }, [isAccountOpen, user?.email]);
+
+  const latestActiveOrder = orders.find(o => o.status !== "Delivered") || orders[0];
+  const statusInfo = latestActiveOrder ? getStatusProgress(latestActiveOrder.status) : null;
 
   return (
     <AnimatePresence>
@@ -454,41 +505,58 @@ export default function AccountDrawer() {
                   {activeTab === "profile" ? (
                     <div className="space-y-4">
                       {/* Active Custom Order status */}
-                      <div className="bg-white p-5 rounded-[2px] border border-brand-sand/65 shadow-xs space-y-4">
-                        <div className="flex justify-between items-center border-b border-brand-sand/30 pb-2">
-                          <span className="text-[10px] uppercase font-bold tracking-widest text-[#C9A76A] flex items-center gap-1.5">
-                            <Loader className="w-3.5 h-3.5 animate-spin text-[#C9A76A]" />
-                            <span>Active Commission status</span>
-                          </span>
-                          <span className="text-[9px] bg-brand-forest/10 text-brand-forest font-bold px-2 py-0.5 rounded-[2px]">
-                            Stage 4 / 6
-                          </span>
-                        </div>
-                        
-                        <div className="space-y-1">
-                          <h5 className="font-serif text-xs sm:text-sm font-normal text-[#1A1A1A]">Bridal Bouquet Preservation</h5>
-                          <span className="text-[10px] text-[#5A5A5A]">Spec: 6x6 Hexagon Block • Silica Drying & Triple Resin Pour</span>
-                        </div>
-
-                        {/* Progress visual tracker */}
-                        <div className="space-y-2 pt-1">
-                          <div className="flex justify-between text-[10px] font-bold text-[#1A1A1A]/70">
-                            <span>Resin Pouring & Degassing</span>
-                            <span className="text-[#C9A76A]">Stage 4 / 6 (65%)</span>
-                          </div>
-                          <div className="relative w-full bg-[#FAF8F5] rounded-[2px] h-2 overflow-hidden border border-brand-sand/60">
-                            <div className="bg-brand-gold h-full rounded-[2px] animate-pulse-slow" style={{ width: "65%" }} />
+                      {latestActiveOrder ? (
+                        <div className="bg-white p-5 rounded-[2px] border border-brand-sand/65 shadow-xs space-y-4">
+                          <div className="flex justify-between items-center border-b border-brand-sand/30 pb-2">
+                            <span className="text-[10px] uppercase font-bold tracking-widest text-[#C9A76A] flex items-center gap-1.5">
+                              <Loader className="w-3.5 h-3.5 animate-spin text-[#C9A76A]" />
+                              <span>Active Curation status</span>
+                            </span>
+                            <span className="text-[9px] bg-brand-forest/10 text-brand-forest font-bold px-2 py-0.5 rounded-[2px]">
+                              Order #{latestActiveOrder.id}
+                            </span>
                           </div>
                           
-                          {/* Staged Indicators */}
-                          <div className="grid grid-cols-4 gap-1 text-[8px] font-bold text-[#5A5A5A]/60 uppercase tracking-wider text-center pt-1">
-                            <span className="text-brand-forest">Dried</span>
-                            <span className="text-brand-forest">Layout</span>
-                            <span className="text-brand-gold animate-pulse">Pouring</span>
-                            <span>Polish</span>
+                          <div className="space-y-1">
+                            <h5 className="font-serif text-xs sm:text-sm font-normal text-[#1A1A1A]">
+                              {latestActiveOrder.cart && latestActiveOrder.cart[0] 
+                                ? latestActiveOrder.cart[0].product?.name || "Custom Piece"
+                                : "Custom Resin Curation"}
+                              {latestActiveOrder.cart && latestActiveOrder.cart.length > 1 && ` (+${latestActiveOrder.cart.length - 1} more items)`}
+                            </h5>
+                            <span className="text-[10px] text-[#5A5A5A] block leading-relaxed mt-1">
+                              {statusInfo?.desc}
+                            </span>
+                          </div>
+
+                          {/* Progress visual tracker */}
+                          <div className="space-y-2 pt-1">
+                            <div className="flex justify-between text-[10px] font-bold text-[#1A1A1A]/70">
+                              <span>Stage: {latestActiveOrder.status}</span>
+                              <span className="text-[#C9A76A]">{statusInfo?.percent}%</span>
+                            </div>
+                            <div className="relative w-full bg-[#FAF8F5] rounded-[2px] h-2 overflow-hidden border border-brand-sand/60">
+                              <div className="bg-brand-gold h-full rounded-[2px] transition-all duration-500" style={{ width: `${statusInfo?.percent}%` }} />
+                            </div>
+                            
+                            {/* Staged Indicators */}
+                            <div className="grid grid-cols-4 gap-1 text-[8px] font-bold text-[#5A5A5A]/60 uppercase tracking-wider text-center pt-1">
+                              <span className={statusInfo?.step && statusInfo.step >= 1 ? "text-brand-forest font-bold" : ""}>Curation</span>
+                              <span className={statusInfo?.step && statusInfo.step >= 3 ? "text-brand-forest font-bold" : statusInfo?.step === 2 ? "text-brand-gold animate-pulse font-bold" : ""}>Pouring</span>
+                              <span className={statusInfo?.step && statusInfo.step >= 5 ? "text-brand-forest font-bold" : statusInfo?.step === 4 ? "text-brand-gold animate-pulse font-bold" : ""}>Curing</span>
+                              <span className={statusInfo?.step && statusInfo.step >= 6 ? "text-brand-forest font-bold" : ""}>Delivered</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="bg-white p-6 rounded-[2px] border border-brand-sand/65 shadow-xs text-center space-y-3">
+                          <Compass className="w-8 h-8 text-[#C9A76A]/40 mx-auto" />
+                          <h5 className="font-serif text-sm font-normal text-brand-forest">No Custom Curations Yet</h5>
+                          <p className="text-[11px] text-[#5A5A5A] leading-relaxed max-w-xs mx-auto">
+                            Design a bespoke live-edge clock, botanical geode coasters, or river board to begin your artistic journey.
+                          </p>
+                        </div>
+                      )}
 
                       {/* Coupon card */}
                       <div className="bg-[#FAF8F5] p-5 rounded-[2px] border border-brand-gold/20 shadow-inner space-y-2.5 relative overflow-hidden">
@@ -502,28 +570,70 @@ export default function AccountDrawer() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {pastOrders.map((ord) => (
-                        <div key={ord.id} className="bg-white p-5 rounded-[2px] border border-brand-sand/60 shadow-xs space-y-3 text-xs text-[#1A1A1A]/80 relative overflow-hidden">
-                          {/* Left decorative wood accent */}
-                          <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-brand-gold" />
-                          
-                          <div className="flex justify-between items-center text-[10px] uppercase text-[#5A5A5A]/80 font-bold tracking-wider">
-                            <span>Invoice {ord.id}</span>
-                            <span>{ord.date}</span>
-                          </div>
-                          <div className="space-y-1">
-                            <div className="font-serif text-sm text-[#1A1A1A] font-normal">{ord.item}</div>
-                            <div className="text-[10px] text-brand-forest font-medium">✨ Walnut Timber Base & Cyan Resin</div>
-                          </div>
-                          <div className="flex justify-between items-center pt-2 mt-1 border-t border-brand-sand/20">
-                            <span className="text-brand-gold font-bold font-mono text-sm">{ord.amount}</span>
-                            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-green-700 bg-green-50 px-2 py-0.5 rounded-[2px] border border-green-200/40">
-                              <span className="w-1.5 h-1.5 bg-green-500 rounded-full" /> 
-                              {ord.status}
-                            </span>
-                          </div>
+                      {loadingOrders ? (
+                        <div className="text-center py-12 space-y-2">
+                          <Loader className="w-6 h-6 animate-spin text-[#C9A76A] mx-auto" />
+                          <p className="text-xs text-[#5A5A5A]">Loading your gallery acquisitions...</p>
                         </div>
-                      ))}
+                      ) : orders.length === 0 ? (
+                        <div className="bg-white p-8 rounded-[2px] border border-brand-sand/60 shadow-xs text-center space-y-3">
+                          <History className="w-8 h-8 text-[#C9A76A]/40 mx-auto animate-pulse" />
+                          <h5 className="font-serif text-sm font-normal text-brand-forest">No History Recorded</h5>
+                          <p className="text-[11px] text-[#5A5A5A] leading-relaxed">
+                            Your bespoke purchases, curated blocks, and custom commissions will display here once submitted.
+                          </p>
+                        </div>
+                      ) : (
+                        orders.map((ord) => (
+                          <div key={ord.id} className="bg-white p-5 rounded-[2px] border border-brand-sand/60 shadow-xs space-y-3 text-xs text-[#1A1A1A]/80 relative overflow-hidden">
+                            {/* Left decorative wood accent */}
+                            <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-brand-gold" />
+                            
+                            <div className="flex justify-between items-center text-[10px] uppercase text-[#5A5A5A]/80 font-bold tracking-wider">
+                              <span>Invoice #{ord.id}</span>
+                              <span>{new Date(ord.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                            </div>
+
+                            {/* Cart Items listing */}
+                            <div className="space-y-2.5">
+                              {ord.cart && ord.cart.map((item: any, idx: number) => (
+                                <div key={idx} className="border-b border-brand-sand/15 last:border-0 pb-2.5 last:pb-0">
+                                  <div className="flex justify-between font-serif text-xs text-[#1A1A1A] font-normal">
+                                    <span>{item.product?.name || "Custom Piece"} <span className="font-sans text-[10px] text-[#5A5A5A]">x{item.quantity}</span></span>
+                                    <span className="font-mono text-[10px]">₹{((item.product?.price || 0) * item.quantity).toFixed(2)}</span>
+                                  </div>
+                                  
+                                  {/* Custom configurations */}
+                                  {(item.selectedWood || item.selectedResinColor || item.selectedDeco || item.personalizationText) && (
+                                    <div className="text-[9px] bg-[#FAF8F5] border border-brand-sand/30 rounded-[1px] p-2 mt-1.5 space-y-0.5 text-[#5A5A5A] leading-normal font-medium">
+                                      {item.selectedWood && <div>• Wood: <span className="text-[#1A1A1A] font-semibold">{item.selectedWood}</span></div>}
+                                      {item.selectedResinColor && <div>• Resin: <span className="text-[#1A1A1A] font-semibold">{item.selectedResinColor}</span></div>}
+                                      {item.selectedDeco && item.selectedDeco.length > 0 && (
+                                        <div>• Inclusions: <span className="text-[#1A1A1A] font-semibold">{item.selectedDeco.join(", ")}</span></div>
+                                      )}
+                                      {item.personalizationText && (
+                                        <div>• Engraving: <span className="font-serif italic text-[#C9A76A]">"{item.personalizationText}"</span></div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+
+                            <div className="flex justify-between items-center pt-2.5 mt-1 border-t border-brand-sand/20">
+                              <span className="text-brand-gold font-bold font-mono text-sm">₹{Number(ord.grandTotal).toFixed(2)}</span>
+                              <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[2px] border ${
+                                ord.status === "Delivered"
+                                  ? "text-green-700 bg-green-50 border-green-200/40"
+                                  : "text-brand-gold bg-[#FAF8F5] border-brand-gold/20"
+                              }`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${ord.status === "Delivered" ? "bg-green-500" : "bg-brand-gold animate-pulse"}`} /> 
+                                {ord.status}
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
                   )}
                 </div>

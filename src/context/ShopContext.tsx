@@ -44,8 +44,30 @@ interface ShopContextType {
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
 
 export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [wishlist, setWishlist] = useState<Product[]>([]);
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    const savedCart = localStorage.getItem("resingrove_cart");
+    if (savedCart) {
+      try {
+        return JSON.parse(savedCart);
+      } catch (e) {
+        console.error("Failed to parse saved cart", e);
+      }
+    }
+    return [];
+  });
+
+  const [wishlist, setWishlist] = useState<Product[]>(() => {
+    const savedWishlist = localStorage.getItem("resingrove_wishlist");
+    if (savedWishlist) {
+      try {
+        return JSON.parse(savedWishlist);
+      } catch (e) {
+        console.error("Failed to parse saved wishlist", e);
+      }
+    }
+    return [];
+  });
+
   const [isCartOpen, setCartOpen] = useState(false);
   const [isWishlistOpen, setWishlistOpen] = useState(false);
   const [isAccountOpen, setAccountOpen] = useState(false);
@@ -87,26 +109,6 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return () => {
         subscription.unsubscribe();
       };
-    }
-  }, []);
-
-  // Load cart and wishlist from localStorage on mount
-  useEffect(() => {
-    const savedCart = localStorage.getItem("resingrove_cart");
-    const savedWishlist = localStorage.getItem("resingrove_wishlist");
-    if (savedCart) {
-      try {
-        setCart(JSON.parse(savedCart));
-      } catch (e) {
-        console.error("Failed to parse saved cart", e);
-      }
-    }
-    if (savedWishlist) {
-      try {
-        setWishlist(JSON.parse(savedWishlist));
-      } catch (e) {
-        console.error("Failed to parse saved wishlist", e);
-      }
     }
   }, []);
 
@@ -170,8 +172,10 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     localStorage.setItem("resingrove_cart", JSON.stringify(cart));
 
+    if (isSyncingCart) return;
+
     const syncCart = async () => {
-      if (user && !user.isMock && isSupabaseConfigured && !isSyncingCart) {
+      if (user && !user.isMock && isSupabaseConfigured) {
         await syncCartToSupabase(user.id, cart);
       }
     };
@@ -181,7 +185,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [cart, user]);
+  }, [cart, user, isSyncingCart]);
 
   // Save wishlist to localStorage on changes
   useEffect(() => {
