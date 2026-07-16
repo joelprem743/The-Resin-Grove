@@ -42,34 +42,6 @@ export const CATEGORIES: Category[] = [
     slug: "jewelry",
     image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=500&q=80",
     description: "Delicate silver and gold bezels encasing preserved wildflowers and crystals."
-  },
-  {
-    id: "cat-7",
-    name: "Bookmarks",
-    slug: "bookmarks",
-    image: "https://images.unsplash.com/photo-1474932430478-367db26836c1?auto=format&fit=crop&w=500&q=80",
-    description: "Ultra-thin, crystal clear bookmarks filled with lavender, rose petals, and gold flakes."
-  },
-  {
-    id: "cat-8",
-    name: "Name Plates",
-    slug: "name-plates",
-    image: "https://images.unsplash.com/photo-1613682139695-167232230b05?auto=format&fit=crop&w=500&q=80",
-    description: "Stunning professional or doorstep live edge oak plates embedded with resin rivers."
-  },
-  {
-    id: "cat-9",
-    name: "Home Décor",
-    slug: "home-decor",
-    image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=500&q=80",
-    description: "Unique ring dishes, vases, and abstract tealight holders reflecting natural light."
-  },
-  {
-    id: "cat-10",
-    name: "Custom Gifts",
-    slug: "custom-gifts",
-    image: "https://images.unsplash.com/photo-1513201099705-a9746e1e201f?auto=format&fit=crop&w=500&q=80",
-    description: "Bespoke preservation of wedding bouquets, baby mementos, and anniversary plates."
   }
 ];
 

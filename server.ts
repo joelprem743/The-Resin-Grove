@@ -4,8 +4,14 @@ import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import nodemailer from "nodemailer";
 import { createClient } from "@supabase/supabase-js";
+import dotenv from "dotenv";
 
-// Local storage paths
+// Load environment variables
+dotenv.config();
+
+// Local storage paths — ONLY used as a fallback when Supabase is not configured
+// (e.g. local development without env vars set). When Supabase IS configured,
+// it is the single source of truth: all reads and writes go through it.
 const INQUIRIES_FILE = path.join(process.cwd(), "inquiries.json");
 const ORDERS_FILE = path.join(process.cwd(), "orders.json");
 
@@ -101,8 +107,7 @@ async function sendEmail({ to, subject, text, html }: { to: string; subject: str
   }
 }
 
-
-// Helper to safely load JSON file
+// Helper to safely load JSON file (fallback storage only)
 function loadJSON<T>(filePath: string, defaultValue: T): T {
   try {
     if (fs.existsSync(filePath)) {
@@ -115,7 +120,7 @@ function loadJSON<T>(filePath: string, defaultValue: T): T {
   return defaultValue;
 }
 
-// Helper to safely save JSON file
+// Helper to safely save JSON file (fallback storage only)
 function saveJSON<T>(filePath: string, data: T): void {
   try {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
@@ -140,165 +145,200 @@ if (supabaseUrl && supabaseAnonKey && supabaseUrl !== "" && supabaseAnonKey !== 
   console.log("[Supabase] Credentials not set in environment variables. Running in local JSON storage mode.");
 }
 
-// Supabase and local storage unified save helpers
-async function saveOrder(order: any) {
-  // Always save locally first (as a robust, reliable backup source)
-  const orders = loadJSON<any[]>(ORDERS_FILE, []);
-  const existingIndex = orders.findIndex(o => o.id === order.id);
-  if (existingIndex > -1) {
-    orders[existingIndex] = order;
-  } else {
-    orders.unshift(order);
-  }
-  saveJSON(ORDERS_FILE, orders);
+function mapOrderRow(item: any) {
+  return {
+    id: item.id,
+    shippingDetails: item.shipping_details,
+    cart: item.cart,
+    grandTotal: Number(item.grand_total),
+    createdAt: item.created_at,
+    status: item.status,
+    orderTime: item.order_time,
+  };
+}
 
-  if (supabase) {
-    try {
-      console.log(`[Supabase] Syncing order ${order.id} to Supabase...`);
-      const { error } = await supabase
-        .from("orders")
-        .upsert({
-          id: order.id,
-          shipping_details: order.shippingDetails,
-          cart: order.cart,
-          grand_total: order.grandTotal,
-          created_at: order.createdAt,
-          status: order.status,
-          order_time: order.orderTime || new Date(order.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-        });
-      
-      if (error) {
-        console.log(`[Supabase Status] Order ${order.id} is pending table configuration:`, error.message);
-        console.log("[Supabase Instruction] To resolve this, run the provided SQL setup script in your Supabase SQL Editor.");
-        return { success: false, error: error.message };
-      } else {
-        console.log(`[Supabase] Successfully synced order ${order.id} to Supabase database.`);
-        return { success: true };
-      }
-    } catch (err: any) {
-      console.log(`[Supabase Status] Exception during order ${order.id} sync:`, err);
-      return { success: false, error: err.message || String(err) };
-    }
+function mapInquiryRow(item: any) {
+  return {
+    id: item.id,
+    name: item.name,
+    email: item.email,
+    projectType: item.project_type,
+    budget: item.budget,
+    description: item.description,
+    deliveryDate: item.delivery_date,
+    createdAt: item.created_at,
+    status: item.status,
+    configuration: item.configuration,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// WRITE HELPERS
+// Supabase is the single source of truth when configured. Local JSON is only
+// ever used as a fallback when Supabase is not configured at all.
+// ---------------------------------------------------------------------------
+
+async function saveOrder(order: any) {
+  if (!supabase) {
+    const orders = loadJSON<any[]>(ORDERS_FILE, []);
+    const existingIndex = orders.findIndex((o) => o.id === order.id);
+    if (existingIndex > -1) orders[existingIndex] = order;
+    else orders.unshift(order);
+    saveJSON(ORDERS_FILE, orders);
+    return { success: true, localOnly: true };
   }
-  return { success: true, localOnly: true };
+
+  try {
+    const { error } = await supabase.from("orders").upsert({
+      id: order.id,
+      shipping_details: order.shippingDetails,
+      cart: order.cart,
+      grand_total: order.grandTotal,
+      created_at: order.createdAt,
+      status: order.status,
+      order_time: order.orderTime || new Date(order.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    });
+
+    if (error) {
+      console.error(`[Supabase] Failed to save order ${order.id}:`, error.message);
+      return { success: false, error: error.message };
+    }
+
+    console.log(`[Supabase] Successfully saved order ${order.id}.`);
+
+    if (order.cart && order.cart.length > 0) {
+      const itemsToInsert = order.cart.map((item: any) => ({
+        order_id: order.id,
+        product_id: (item.product?.id || item.product_id || "").toString(),
+        quantity: item.quantity,
+        selected_wood: item.selectedWood || null,
+        selected_resin_color: item.selectedResinColor || null,
+        selected_deco: item.selectedDeco || [],
+        personalization_text: item.personalizationText || null,
+      }));
+
+      await supabase.from("order_items").delete().eq("order_id", order.id);
+      const { error: itemsError } = await supabase.from("order_items").insert(itemsToInsert);
+      if (itemsError) {
+        console.error(`[Supabase] Failed to save order_items for order ${order.id}:`, itemsError.message);
+      }
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error(`[Supabase] Exception saving order ${order.id}:`, err);
+    return { success: false, error: err.message || String(err) };
+  }
 }
 
 async function saveInquiry(inquiry: any) {
-  // Always save locally first
-  const inquiries = loadJSON<any[]>(INQUIRIES_FILE, []);
-  const existingIndex = inquiries.findIndex(i => i.id === inquiry.id);
-  if (existingIndex > -1) {
-    inquiries[existingIndex] = inquiry;
-  } else {
-    inquiries.unshift(inquiry);
-  }
-  saveJSON(INQUIRIES_FILE, inquiries);
-
-  if (supabase) {
-    try {
-      console.log(`[Supabase] Syncing inquiry ${inquiry.id} to Supabase...`);
-      const { error } = await supabase
-        .from("inquiries")
-        .upsert({
-          id: inquiry.id,
-          name: inquiry.name,
-          email: inquiry.email,
-          project_type: inquiry.projectType,
-          budget: inquiry.budget,
-          description: inquiry.description,
-          delivery_date: inquiry.deliveryDate,
-          created_at: inquiry.createdAt,
-          status: inquiry.status,
-          configuration: inquiry.configuration
-        });
-      
-      if (error) {
-        console.log(`[Supabase Status] Inquiry ${inquiry.id} is pending table configuration:`, error.message);
-        console.log("[Supabase Instruction] To resolve this, run the provided SQL setup script in your Supabase SQL Editor.");
-        return { success: false, error: error.message };
-      } else {
-        console.log(`[Supabase] Successfully synced inquiry ${inquiry.id} to Supabase database.`);
-        return { success: true };
-      }
-    } catch (err: any) {
-      console.log(`[Supabase Status] Exception during inquiry ${inquiry.id} sync:`, err);
-      return { success: false, error: err.message || String(err) };
-    }
-  }
-  return { success: true, localOnly: true };
-}
-
-// Background sync function on startup to copy existing local JSON files to Supabase
-async function syncLocalDataToSupabase() {
-  if (!supabase) return { success: false, error: "Supabase client is not configured." };
-  console.log("[Supabase] Starting authoritative sync of local inquiries and orders to Supabase...");
-  try {
+  if (!supabase) {
     const inquiries = loadJSON<any[]>(INQUIRIES_FILE, []);
-    let syncedInquiriesCount = 0;
-    let inquiriesError = null;
-    for (const inq of inquiries) {
-      const syncRes = await saveInquiry(inq);
-      if (syncRes.success) {
-        syncedInquiriesCount++;
-      } else {
-        inquiriesError = syncRes.error;
-        console.log(`[Supabase Status] Failed to sync inquiry ${inq.id}: ${syncRes.error}`);
-        break;
-      }
+    const existingIndex = inquiries.findIndex((i) => i.id === inquiry.id);
+    if (existingIndex > -1) inquiries[existingIndex] = inquiry;
+    else inquiries.unshift(inquiry);
+    saveJSON(INQUIRIES_FILE, inquiries);
+    return { success: true, localOnly: true };
+  }
+
+  try {
+    const { error } = await supabase.from("inquiries").upsert({
+      id: inquiry.id,
+      name: inquiry.name,
+      email: inquiry.email,
+      project_type: inquiry.projectType,
+      budget: inquiry.budget,
+      description: inquiry.description,
+      delivery_date: inquiry.deliveryDate,
+      created_at: inquiry.createdAt,
+      status: inquiry.status,
+      configuration: inquiry.configuration,
+    });
+
+    if (error) {
+      console.error(`[Supabase] Failed to save inquiry ${inquiry.id}:`, error.message);
+      return { success: false, error: error.message };
     }
 
-    const orders = loadJSON<any[]>(ORDERS_FILE, []);
-    let syncedOrdersCount = 0;
-    let ordersError = null;
-    for (const ord of orders) {
-      const syncRes = await saveOrder(ord);
-      if (syncRes.success) {
-        syncedOrdersCount++;
-      } else {
-        ordersError = syncRes.error;
-        console.log(`[Supabase Status] Failed to sync order ${ord.id}: ${syncRes.error}`);
-        break;
-      }
-    }
-    
-    if (syncedInquiriesCount > 0 || syncedOrdersCount > 0) {
-      console.log(`[Supabase] Sync complete. Processed ${syncedInquiriesCount} inquiries and ${syncedOrdersCount} orders to Supabase.`);
-    } else {
-      console.log("[Supabase] Sync check completed. No records to sync.");
-    }
-
-    return {
-      success: true,
-      syncedInquiries: syncedInquiriesCount,
-      syncedOrders: syncedOrdersCount,
-      inquiriesError,
-      ordersError
-    };
+    console.log(`[Supabase] Successfully saved inquiry ${inquiry.id}.`);
+    return { success: true };
   } catch (err: any) {
-    console.log("[Supabase Status] Sync completed with exception status:", err);
+    console.error(`[Supabase] Exception saving inquiry ${inquiry.id}:`, err);
     return { success: false, error: err.message || String(err) };
   }
+}
+
+// ---------------------------------------------------------------------------
+// READ HELPERS
+// Fetch exclusively from Supabase when configured — no merging with local
+// JSON, no back-syncing. Local JSON is read only when Supabase isn't set up.
+// ---------------------------------------------------------------------------
+
+async function getAllOrders() {
+  if (!supabase) {
+    return loadJSON<any[]>(ORDERS_FILE, []).filter((o) => o.id !== "rls-probe-do-not-delete");
+  }
+
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("[Supabase] Failed to fetch orders:", error.message);
+    throw new Error(error.message);
+  }
+
+  return (data || [])
+    .filter((item: any) => item.id !== "rls-probe-do-not-delete")
+    .map(mapOrderRow);
+}
+
+async function getAllInquiries() {
+  if (!supabase) {
+    return loadJSON<any[]>(INQUIRIES_FILE, []).filter((i) => i.id !== "rls-probe-do-not-delete");
+  }
+
+  const { data, error } = await supabase
+    .from("inquiries")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("[Supabase] Failed to fetch inquiries:", error.message);
+    throw new Error(error.message);
+  }
+
+  return (data || [])
+    .filter((item: any) => item.id !== "rls-probe-do-not-delete")
+    .map(mapInquiryRow);
 }
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // Use JSON body parser for incoming data
   app.use(express.json({ limit: "10mb" }));
 
-  // API Routes (defined before Vite middleware)
-  
   // Health check
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", mode: process.env.NODE_ENV || "development" });
+  });
+
+  // Public GET Endpoint: Retrieve public Supabase configuration for dynamic client initialization
+  app.get("/api/supabase-config", (req, res) => {
+    res.json({
+      initialized: !!(supabaseUrl && supabaseAnonKey),
+      supabaseUrl: supabaseUrl || null,
+      supabaseAnonKey: supabaseAnonKey || null,
+    });
   });
 
   // Submit a Custom Design Inquiry (from CustomOrders.tsx or CustomBuilder.tsx)
   app.post("/api/inquiries", async (req, res) => {
     try {
       const { name, email, projectType, budget, description, deliveryDate, configuration } = req.body;
-      
+
       if (!name || !email || !description) {
         return res.status(400).json({ error: "Missing required contact details or description." });
       }
@@ -313,12 +353,20 @@ async function startServer() {
         deliveryDate: deliveryDate || "Flexible",
         createdAt: new Date().toISOString(),
         status: "Pending Review",
-        configuration: configuration || null // holds wood type, resin color, inclusions etc if sent from CustomBuilder
+        configuration: configuration || null,
       };
 
-      const syncResult = await saveInquiry(newInquiry);
+      const saveResult = await saveInquiry(newInquiry);
 
-      // AUTOMATICALLY SEND EMAIL TO ADMIN
+      if (!saveResult.success) {
+        // Supabase is the source of truth — if the write failed, tell the caller honestly
+        // instead of pretending it succeeded.
+        return res.status(502).json({
+          error: "Failed to save inquiry to the database.",
+          details: saveResult.error,
+        });
+      }
+
       const adminEmailAddress = process.env.ADMIN_EMAIL || "admin@theresingrove.com";
       const emailSubject = `[The Resin Grove] New Custom Design Inquiry - ${newInquiry.id}`;
 
@@ -378,7 +426,6 @@ The Resin Grove Automation`;
             <h1 style="color: #FFFFFF; font-family: sans-serif; margin: 0; font-weight: normal; font-size: 24px; letter-spacing: 1px;">The Resin Grove</h1>
             <p style="color: #C9A76A; font-size: 11px; text-transform: uppercase; margin: 6px 0 0 0; letter-spacing: 2px; font-weight: bold;">New Custom Design Inquiry</p>
           </div>
-          
           <div style="padding: 24px; background: #FFFFFF;">
             <h3 style="color: #1A1A1A; font-family: sans-serif; border-bottom: 1px solid #D9CBB3; padding-bottom: 8px; margin-top: 0;">Customer Information</h3>
             <table style="width: 100%; font-size: 12px; color: #333333; margin-bottom: 24px; border-collapse: collapse;">
@@ -391,7 +438,6 @@ The Resin Grove Automation`;
                 <td style="padding: 4px 0; color: #1A1A1A; font-weight: 600;"><a href="mailto:${email}" style="color: #C9A76A; text-decoration: none;">${email}</a></td>
               </tr>
             </table>
-
             <h3 style="color: #1A1A1A; font-family: sans-serif; border-bottom: 1px solid #D9CBB3; padding-bottom: 8px; margin-top: 0;">Inquiry Details</h3>
             <table style="width: 100%; font-size: 12px; color: #333333; margin-bottom: 24px; border-collapse: collapse;">
               <tr>
@@ -411,15 +457,12 @@ The Resin Grove Automation`;
                 <td style="padding: 4px 0; color: #1A1A1A;">${newInquiry.deliveryDate}</td>
               </tr>
             </table>
-
             <h3 style="color: #1A1A1A; font-family: sans-serif; border-bottom: 1px solid #D9CBB3; padding-bottom: 8px; margin-top: 0;">Vision & Design Request</h3>
             <p style="font-size: 12px; color: #5A5A5A; line-height: 1.6; background: #FAF8F5; padding: 12px; border: 1px solid #EAEAEA; border-radius: 2px; font-style: italic;">
               "${description}"
             </p>
-
             ${configHtml}
           </div>
-          
           <div style="background: #1A1A1A; color: #888888; padding: 16px; text-align: center; font-size: 10px;">
             <p style="margin: 0 0 4px 0; color: #C9A76A;">The Resin Grove Automated System</p>
             <p style="margin: 0;">This email was automatically generated and sent upon customer confirmation.</p>
@@ -427,25 +470,20 @@ The Resin Grove Automation`;
         </div>
       `;
 
-      // Send email asynchronously in the background so it doesn't block client response
-      sendEmail({
-        to: adminEmailAddress,
-        subject: emailSubject,
-        text: textBody,
-        html: htmlBody
-      }).then((emailResult) => {
-        console.log(`[SMTP Background] Inquiry email sent successfully. Preview: ${emailResult.previewUrl || "N/A"}`);
-      }).catch((err) => {
-        console.error("[SMTP Background] Failed to send inquiry email:", err);
-      });
+      sendEmail({ to: adminEmailAddress, subject: emailSubject, text: textBody, html: htmlBody })
+        .then((emailResult) => {
+          console.log(`[SMTP Background] Inquiry email sent successfully. Preview: ${emailResult.previewUrl || "N/A"}`);
+        })
+        .catch((err) => {
+          console.error("[SMTP Background] Failed to send inquiry email:", err);
+        });
 
-      res.status(201).json({ 
-        success: true, 
-        message: "Inquiry successfully submitted.", 
+      res.status(201).json({
+        success: true,
+        message: "Inquiry successfully submitted.",
         inquiry: newInquiry,
         emailSent: true,
         previewUrl: "",
-        supabaseSync: syncResult
       });
     } catch (err: any) {
       console.error("Error handling inquiry:", err);
@@ -468,13 +506,19 @@ The Resin Grove Automation`;
         cart,
         grandTotal: Number(grandTotal),
         createdAt: new Date().toISOString(),
-        orderTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        status: "Curation Requested"
+        orderTime: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        status: "Curation Requested",
       };
 
-      const syncResult = await saveOrder(newOrder);
+      const saveResult = await saveOrder(newOrder);
 
-      // AUTOMATICALLY SEND EMAIL TO ADMIN
+      if (!saveResult.success) {
+        return res.status(502).json({
+          error: "Failed to save order to the database.",
+          details: saveResult.error,
+        });
+      }
+
       const adminEmailAddress = process.env.ADMIN_EMAIL || "orders@theresingrove.com";
       const emailSubject = `[The Resin Grove] New Order & Custom Curation - ${newOrder.id}`;
 
@@ -543,7 +587,6 @@ The Resin Grove Automation`;
             <h1 style="color: #FFFFFF; font-family: sans-serif; margin: 0; font-weight: normal; font-size: 24px; letter-spacing: 1px;">The Resin Grove</h1>
             <p style="color: #C9A76A; font-size: 11px; text-transform: uppercase; margin: 6px 0 0 0; letter-spacing: 2px; font-weight: bold;">New Order Notification</p>
           </div>
-          
           <div style="padding: 24px; background: #FFFFFF;">
             <h3 style="color: #1A1A1A; font-family: sans-serif; border-bottom: 1px solid #D9CBB3; padding-bottom: 8px; margin-top: 0;">Customer Information</h3>
             <table style="width: 100%; font-size: 12px; color: #333333; margin-bottom: 24px; border-collapse: collapse;">
@@ -564,7 +607,6 @@ The Resin Grove Automation`;
                 <td style="padding: 4px 0; color: #1A1A1A;">${shippingDetails.address}, ZIP: ${shippingDetails.zip}</td>
               </tr>
             </table>
-
             <h3 style="color: #1A1A1A; font-family: sans-serif; border-bottom: 1px solid #D9CBB3; padding-bottom: 8px; margin-top: 0;">Order Summary</h3>
             <div style="font-size: 12px; padding: 12px; background: #FAF8F5; border: 1px solid #EAEAEA; margin-bottom: 24px; border-radius: 2px;">
               <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
@@ -580,13 +622,11 @@ The Resin Grove Automation`;
                 <span style="color: #C9A76A;">₹${newOrder.grandTotal.toFixed(2)}</span>
               </div>
             </div>
-
             <h3 style="color: #1A1A1A; font-family: sans-serif; border-bottom: 1px solid #D9CBB3; padding-bottom: 8px; margin-top: 0;">Curation Items</h3>
             <div style="border: 1px solid #EAEAEA; border-radius: 2px;">
               ${itemsHtml}
             </div>
           </div>
-          
           <div style="background: #1A1A1A; color: #888888; padding: 16px; text-align: center; font-size: 10px;">
             <p style="margin: 0 0 4px 0; color: #C9A76A;">The Resin Grove Automated System</p>
             <p style="margin: 0;">This email was automatically generated and sent upon customer confirmation.</p>
@@ -594,25 +634,20 @@ The Resin Grove Automation`;
         </div>
       `;
 
-      // Send email asynchronously in the background so it doesn't block client response
-      sendEmail({
-        to: adminEmailAddress,
-        subject: emailSubject,
-        text: textBody,
-        html: htmlBody
-      }).then((emailResult) => {
-        console.log(`[SMTP Background] Order email sent successfully. Preview: ${emailResult.previewUrl || "N/A"}`);
-      }).catch((err) => {
-        console.error("[SMTP Background] Failed to send order email:", err);
-      });
+      sendEmail({ to: adminEmailAddress, subject: emailSubject, text: textBody, html: htmlBody })
+        .then((emailResult) => {
+          console.log(`[SMTP Background] Order email sent successfully. Preview: ${emailResult.previewUrl || "N/A"}`);
+        })
+        .catch((err) => {
+          console.error("[SMTP Background] Failed to send order email:", err);
+        });
 
-      res.status(201).json({ 
-        success: true, 
-        message: "Order placed successfully.", 
+      res.status(201).json({
+        success: true,
+        message: "Order placed successfully.",
         order: newOrder,
         emailSent: true,
         previewUrl: "",
-        supabaseSync: syncResult
       });
     } catch (err: any) {
       console.error("Error placing order:", err);
@@ -628,14 +663,18 @@ The Resin Grove Automation`;
         url: null,
         ordersTableOk: false,
         inquiriesTableOk: false,
-        error: "Supabase environment variables (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY) are not configured."
+        orderItemsTableOk: false,
+        error: "Supabase environment variables (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY) are not configured.",
       });
     }
 
     let ordersTableOk = false;
     let inquiriesTableOk = false;
+    let orderItemsTableOk = false;
     let errorOrders = null;
     let errorInquiries = null;
+    let errorOrderItems = null;
+    let tempOrderCreated = false;
 
     try {
       const { error: rlsError } = await supabase.from("orders").upsert({
@@ -643,19 +682,17 @@ The Resin Grove Automation`;
         shipping_details: {},
         cart: [],
         grand_total: 0,
-        status: "probe"
+        status: "probe",
       });
       if (rlsError) {
-        if (rlsError.code === "42501") {
-          ordersTableOk = false;
-          errorOrders = "Row Level Security (RLS) is active but blocking writes. Please run the SQL Setup script to define permissive public access policies.";
-        } else {
-          ordersTableOk = false;
-          errorOrders = rlsError.message;
-        }
+        ordersTableOk = false;
+        errorOrders =
+          rlsError.code === "42501"
+            ? "Row Level Security (RLS) is active but blocking writes. Please run the SQL Setup script to define permissive public access policies."
+            : rlsError.message;
       } else {
         ordersTableOk = true;
-        await supabase.from("orders").delete().eq("id", "rls-probe-do-not-delete");
+        tempOrderCreated = true;
       }
     } catch (err: any) {
       errorOrders = err.message || String(err);
@@ -666,16 +703,14 @@ The Resin Grove Automation`;
         id: "rls-probe-do-not-delete",
         name: "probe",
         email: "probe@example.com",
-        status: "probe"
+        status: "probe",
       });
       if (rlsError) {
-        if (rlsError.code === "42501") {
-          inquiriesTableOk = false;
-          errorInquiries = "Row Level Security (RLS) is active but blocking writes. Please run the SQL Setup script to define permissive public access policies.";
-        } else {
-          inquiriesTableOk = false;
-          errorInquiries = rlsError.message;
-        }
+        inquiriesTableOk = false;
+        errorInquiries =
+          rlsError.code === "42501"
+            ? "Row Level Security (RLS) is active but blocking writes. Please run the SQL Setup script to define permissive public access policies."
+            : rlsError.message;
       } else {
         inquiriesTableOk = true;
         await supabase.from("inquiries").delete().eq("id", "rls-probe-do-not-delete");
@@ -684,170 +719,66 @@ The Resin Grove Automation`;
       errorInquiries = err.message || String(err);
     }
 
+    if (tempOrderCreated) {
+      try {
+        const { error: rlsError } = await supabase.from("order_items").insert({
+          order_id: "rls-probe-do-not-delete",
+          product_id: "rls-probe-item",
+          quantity: 0,
+        });
+        if (rlsError) {
+          orderItemsTableOk = false;
+          errorOrderItems =
+            rlsError.code === "42501"
+              ? "Row Level Security (RLS) is active but blocking writes. Please run the SQL Setup script to define permissive public access policies."
+              : rlsError.message;
+        } else {
+          orderItemsTableOk = true;
+          await supabase.from("order_items").delete().eq("order_id", "rls-probe-do-not-delete");
+        }
+      } catch (err: any) {
+        errorOrderItems = err.message || String(err);
+      }
+
+      try {
+        await supabase.from("orders").delete().eq("id", "rls-probe-do-not-delete");
+      } catch (err) {
+        console.error("[Supabase Status] Failed to clean up probe order:", err);
+      }
+    } else {
+      errorOrderItems = "Cannot verify order_items because parent orders table probe failed or was blocked.";
+    }
+
     res.json({
       initialized: true,
       url: supabaseUrl,
       ordersTableOk,
       inquiriesTableOk,
+      orderItemsTableOk,
       errorOrders,
-      errorInquiries
+      errorInquiries,
+      errorOrderItems,
     });
   });
 
-  // Admin POST Endpoint: Force sync of local data to Supabase on demand
-  app.post("/api/admin/sync-now", async (req, res) => {
-    if (!supabase) {
-      return res.status(400).json({
-        success: false,
-        error: "Supabase integration is not configured."
-      });
-    }
-
-    const result = await syncLocalDataToSupabase();
-    res.json(result);
-  });
-
-  // Admin GET Endpoint: Retrieve all inquiries
+  // Admin GET Endpoint: Retrieve all inquiries (Supabase-only when configured)
   app.get("/api/admin/inquiries", async (req, res) => {
-    const localInquiries = loadJSON<any[]>(INQUIRIES_FILE, []).filter(i => i.id !== "rls-probe-do-not-delete");
-    let inquiries = [...localInquiries];
-
-    if (supabase) {
-      // Trigger sync in the background asynchronously so it doesn't block the API response
-      syncLocalDataToSupabase().catch(err => console.error("[Supabase Background Sync Error]", err));
-      
-      try {
-        console.log("[Supabase] Fetching inquiries from Supabase...");
-        const { data, error } = await supabase
-          .from("inquiries")
-          .select("*")
-          .order("created_at", { ascending: false });
-        
-        if (!error && data) {
-          const supabaseInqs = data
-            .filter((item: any) => item.id !== "rls-probe-do-not-delete")
-            .map((item: any) => ({
-              id: item.id,
-              name: item.name,
-              email: item.email,
-              projectType: item.project_type,
-              budget: item.budget,
-              description: item.description,
-              deliveryDate: item.delivery_date,
-              createdAt: item.created_at,
-              status: item.status,
-              configuration: item.configuration
-            }));
-
-          // Merge: use Supabase records as primary, but keep any local records not yet synced
-          const merged = [...supabaseInqs];
-          for (const localInq of localInquiries) {
-            if (!merged.some(i => i.id === localInq.id)) {
-              merged.push(localInq);
-            }
-          }
-
-          // Back-sync missing or updated inquiries to local inquiries.json
-          const allLocalInqs = loadJSON<any[]>(INQUIRIES_FILE, []);
-          let localInqsUpdated = false;
-          for (const spInq of supabaseInqs) {
-            const idx = allLocalInqs.findIndex(i => i.id === spInq.id);
-            if (idx === -1) {
-              allLocalInqs.push(spInq);
-              localInqsUpdated = true;
-            } else if (allLocalInqs[idx].status !== spInq.status) {
-              allLocalInqs[idx].status = spInq.status;
-              localInqsUpdated = true;
-            }
-          }
-          if (localInqsUpdated) {
-            saveJSON(INQUIRIES_FILE, allLocalInqs);
-            console.log(`[Supabase Sync] Back-synced missing or updated inquiries to local JSON.`);
-          }
-
-          // Sort by creation date descending
-          merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-          inquiries = merged;
-          console.log(`[Supabase] Loaded and merged ${inquiries.length} inquiries.`);
-        } else {
-          console.log("[Supabase Status] Fetching inquiries from Supabase is pending table setup:", error?.message);
-        }
-      } catch (err) {
-        console.log("[Supabase Status] Error fetching inquiries:", err);
-      }
+    try {
+      const inquiries = await getAllInquiries();
+      res.json(inquiries);
+    } catch (err: any) {
+      res.status(502).json({ error: "Failed to fetch inquiries from the database.", details: err.message });
     }
-
-    res.json(inquiries);
   });
 
-  // Admin GET Endpoint: Retrieve all orders
+  // Admin GET Endpoint: Retrieve all orders (Supabase-only when configured)
   app.get("/api/admin/orders", async (req, res) => {
-    const localOrders = loadJSON<any[]>(ORDERS_FILE, []).filter(o => o.id !== "rls-probe-do-not-delete");
-    let orders = [...localOrders];
-
-    if (supabase) {
-      // Trigger sync in the background asynchronously so it doesn't block the API response
-      syncLocalDataToSupabase().catch(err => console.error("[Supabase Background Sync Error]", err));
-
-      try {
-        console.log("[Supabase] Fetching orders from Supabase...");
-        const { data, error } = await supabase
-          .from("orders")
-          .select("*")
-          .order("created_at", { ascending: false });
-        
-        if (!error && data) {
-          const supabaseOrders = data
-            .filter((item: any) => item.id !== "rls-probe-do-not-delete")
-            .map((item: any) => ({
-              id: item.id,
-              shippingDetails: item.shipping_details,
-              cart: item.cart,
-              grandTotal: Number(item.grand_total),
-              createdAt: item.created_at,
-              status: item.status,
-              orderTime: item.order_time
-            }));
-
-          // Merge: use Supabase records as primary, but keep any local records not yet synced
-          const merged = [...supabaseOrders];
-          for (const localOrd of localOrders) {
-            if (!merged.some(o => o.id === localOrd.id)) {
-              merged.push(localOrd);
-            }
-          }
-
-          // Back-sync missing or updated orders to local orders.json
-          const allLocalOrders = loadJSON<any[]>(ORDERS_FILE, []);
-          let localOrdersUpdated = false;
-          for (const spOrd of supabaseOrders) {
-            const idx = allLocalOrders.findIndex(o => o.id === spOrd.id);
-            if (idx === -1) {
-              allLocalOrders.push(spOrd);
-              localOrdersUpdated = true;
-            } else if (allLocalOrders[idx].status !== spOrd.status) {
-              allLocalOrders[idx].status = spOrd.status;
-              localOrdersUpdated = true;
-            }
-          }
-          if (localOrdersUpdated) {
-            saveJSON(ORDERS_FILE, allLocalOrders);
-            console.log(`[Supabase Sync] Back-synced missing or updated orders to local JSON.`);
-          }
-
-          // Sort by creation date descending
-          merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-          orders = merged;
-          console.log(`[Supabase] Loaded and merged ${orders.length} orders.`);
-        } else {
-          console.log("[Supabase Status] Fetching orders from Supabase is pending table setup:", error?.message);
-        }
-      } catch (err) {
-        console.log("[Supabase Status] Error fetching orders:", err);
-      }
+    try {
+      const orders = await getAllOrders();
+      res.json(orders);
+    } catch (err: any) {
+      res.status(502).json({ error: "Failed to fetch orders from the database.", details: err.message });
     }
-
-    res.json(orders);
   });
 
   // User GET Endpoint: Retrieve personalized orders for a specific collector's email
@@ -856,76 +787,17 @@ The Resin Grove Automation`;
     if (!email || typeof email !== "string") {
       return res.status(400).json({ error: "Missing user email parameter." });
     }
-
     const lowercaseEmail = email.toLowerCase().trim();
-    const localOrders = loadJSON<any[]>(ORDERS_FILE, []).filter(o => o.id !== "rls-probe-do-not-delete");
-    const userLocalOrders = localOrders.filter(o => o.shippingDetails?.email?.toLowerCase().trim() === lowercaseEmail);
-    let orders = [...userLocalOrders];
 
-    if (supabase) {
-      try {
-        console.log(`[Supabase] Fetching orders for user ${lowercaseEmail} from Supabase...`);
-        const { data, error } = await supabase
-          .from("orders")
-          .select("*")
-          .order("created_at", { ascending: false });
-        
-        if (!error && data) {
-          const supabaseOrders = data
-            .filter((item: any) => {
-              if (item.id === "rls-probe-do-not-delete") return false;
-              const ordEmail = item.shipping_details?.email || "";
-              return ordEmail.toLowerCase().trim() === lowercaseEmail;
-            })
-            .map((item: any) => ({
-              id: item.id,
-              shippingDetails: item.shipping_details,
-              cart: item.cart,
-              grandTotal: Number(item.grand_total),
-              createdAt: item.created_at,
-              status: item.status,
-              orderTime: item.order_time
-            }));
-
-          // Merge: use Supabase records as primary, but keep any local records not yet synced
-          const merged = [...supabaseOrders];
-          for (const localOrd of userLocalOrders) {
-            if (!merged.some(o => o.id === localOrd.id)) {
-              merged.push(localOrd);
-            }
-          }
-
-          // Back-sync missing or updated user orders to local orders.json
-          const allLocalOrders = loadJSON<any[]>(ORDERS_FILE, []);
-          let localOrdersUpdated = false;
-          for (const spOrd of supabaseOrders) {
-            const idx = allLocalOrders.findIndex(o => o.id === spOrd.id);
-            if (idx === -1) {
-              allLocalOrders.push(spOrd);
-              localOrdersUpdated = true;
-            } else if (allLocalOrders[idx].status !== spOrd.status) {
-              allLocalOrders[idx].status = spOrd.status;
-              localOrdersUpdated = true;
-            }
-          }
-          if (localOrdersUpdated) {
-            saveJSON(ORDERS_FILE, allLocalOrders);
-            console.log(`[Supabase Sync] Back-synced missing user orders during query.`);
-          }
-
-          // Sort by creation date descending
-          merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-          orders = merged;
-          console.log(`[Supabase] Loaded and merged ${orders.length} personalized orders for ${lowercaseEmail}.`);
-        } else {
-          console.log("[Supabase Status] Fetching user orders from Supabase pending table setup:", error?.message);
-        }
-      } catch (err) {
-        console.log("[Supabase Status] Error fetching user orders:", err);
-      }
+    try {
+      const allOrders = await getAllOrders();
+      const userOrders = allOrders.filter(
+        (o: any) => (o.shippingDetails?.email || "").toLowerCase().trim() === lowercaseEmail
+      );
+      res.json(userOrders);
+    } catch (err: any) {
+      res.status(502).json({ error: "Failed to fetch orders from the database.", details: err.message });
     }
-
-    res.json(orders);
   });
 
   // Admin POST Endpoint: Update inquiry status
@@ -933,94 +805,23 @@ The Resin Grove Automation`;
     const { id, status } = req.body;
     if (!id || !status) return res.status(400).json({ error: "Missing id or status." });
 
-    const inquiries = loadJSON<any[]>(INQUIRIES_FILE, []);
-    let inquiryIndex = inquiries.findIndex(i => i.id === id);
-
-    // If inquiry is not found locally but we have Supabase, let's fetch it from Supabase first
-    if (inquiryIndex === -1 && supabase) {
-      try {
-        console.log(`[Supabase] Fetching missing inquiry ${id} from Supabase before update...`);
-        const { data, error } = await supabase
-          .from("inquiries")
-          .select("*")
-          .eq("id", id)
-          .maybeSingle();
-        
-        if (!error && data) {
-          const spInq = {
-            id: data.id,
-            name: data.name,
-            email: data.email,
-            projectType: data.project_type,
-            budget: data.budget,
-            description: data.description,
-            deliveryDate: data.delivery_date,
-            createdAt: data.created_at,
-            status: data.status,
-            configuration: data.configuration
-          };
-          inquiries.push(spInq);
-          saveJSON(INQUIRIES_FILE, inquiries);
-          inquiryIndex = inquiries.length - 1;
-          console.log(`[Supabase Sync] Pulled missing inquiry ${id} into local file for update.`);
-        }
-      } catch (err) {
-        console.error(`[Supabase Sync Error] Could not fetch missing inquiry before update:`, err);
-      }
-    }
-
-    if (inquiryIndex === -1 && !supabase) return res.status(404).json({ error: "Inquiry not found." });
-
-    let updatedInquiry: any = null;
-    if (inquiryIndex > -1) {
-      inquiries[inquiryIndex].status = status;
+    if (!supabase) {
+      const inquiries = loadJSON<any[]>(INQUIRIES_FILE, []);
+      const idx = inquiries.findIndex((i) => i.id === id);
+      if (idx === -1) return res.status(404).json({ error: "Inquiry not found." });
+      inquiries[idx].status = status;
       saveJSON(INQUIRIES_FILE, inquiries);
-      updatedInquiry = inquiries[inquiryIndex];
-    } else {
-      updatedInquiry = { id, status };
+      return res.json({ success: true, inquiry: inquiries[idx] });
     }
 
-    if (supabase) {
-      try {
-        if (inquiryIndex > -1) {
-          console.log(`[Supabase] Authoritatively upserting full details and status for inquiry ${id} to ${status}...`);
-          const { error } = await supabase
-            .from("inquiries")
-            .upsert({
-              id: updatedInquiry.id,
-              name: updatedInquiry.name,
-              email: updatedInquiry.email,
-              project_type: updatedInquiry.projectType,
-              budget: updatedInquiry.budget,
-              description: updatedInquiry.description,
-              delivery_date: updatedInquiry.deliveryDate,
-              created_at: updatedInquiry.createdAt || new Date().toISOString(),
-              status: updatedInquiry.status,
-              configuration: updatedInquiry.configuration
-            });
-          if (error) {
-            console.log(`[Supabase Status] Failed to upsert inquiry ${id} (pending table setup):`, error.message);
-          } else {
-            console.log(`[Supabase] Successfully upserted inquiry ${id} with status ${status}.`);
-          }
-        } else {
-          console.log(`[Supabase] Row is not in local JSON. Performing status-only update for inquiry ${id} to ${status}...`);
-          const { error } = await supabase
-            .from("inquiries")
-            .update({ status })
-            .eq("id", id);
-          if (error) {
-            console.log(`[Supabase Status] Failed to update inquiry ${id} status (pending table setup):`, error.message);
-          } else {
-            console.log(`[Supabase] Successfully updated status for inquiry ${id}.`);
-          }
-        }
-      } catch (err: any) {
-        console.log(`[Supabase Status] Exception during inquiry ${id} update/upsert:`, err.message || err);
-      }
+    const { data, error } = await supabase.from("inquiries").update({ status }).eq("id", id).select().maybeSingle();
+    if (error) {
+      return res.status(502).json({ error: "Failed to update inquiry status.", details: error.message });
     }
-
-    res.json({ success: true, inquiry: updatedInquiry });
+    if (!data) {
+      return res.status(404).json({ error: "Inquiry not found." });
+    }
+    res.json({ success: true, inquiry: mapInquiryRow(data) });
   });
 
   // Admin POST Endpoint: Update order status
@@ -1028,112 +829,49 @@ The Resin Grove Automation`;
     const { id, status } = req.body;
     if (!id || !status) return res.status(400).json({ error: "Missing id or status." });
 
-    const orders = loadJSON<any[]>(ORDERS_FILE, []);
-    let orderIndex = orders.findIndex(o => o.id === id);
-
-    // If order is not found locally but we have Supabase, let's fetch it from Supabase first
-    if (orderIndex === -1 && supabase) {
-      try {
-        console.log(`[Supabase] Fetching missing order ${id} from Supabase before update...`);
-        const { data, error } = await supabase
-          .from("orders")
-          .select("*")
-          .eq("id", id)
-          .maybeSingle();
-        
-        if (!error && data) {
-          const spOrd = {
-            id: data.id,
-            shippingDetails: data.shipping_details,
-            cart: data.cart,
-            grandTotal: Number(data.grand_total),
-            createdAt: data.created_at,
-            status: data.status,
-            orderTime: data.order_time
-          };
-          orders.push(spOrd);
-          saveJSON(ORDERS_FILE, orders);
-          orderIndex = orders.length - 1;
-          console.log(`[Supabase Sync] Pulled missing order ${id} into local file for update.`);
-        }
-      } catch (err) {
-        console.error(`[Supabase Sync Error] Could not fetch missing order before update:`, err);
-      }
-    }
-
-    if (orderIndex === -1 && !supabase) return res.status(404).json({ error: "Order not found." });
-
-    let updatedOrder: any = null;
-    if (orderIndex > -1) {
-      orders[orderIndex].status = status;
+    if (!supabase) {
+      const orders = loadJSON<any[]>(ORDERS_FILE, []);
+      const idx = orders.findIndex((o) => o.id === id);
+      if (idx === -1) return res.status(404).json({ error: "Order not found." });
+      orders[idx].status = status;
       saveJSON(ORDERS_FILE, orders);
-      updatedOrder = orders[orderIndex];
-    } else {
-      updatedOrder = { id, status };
+      return res.json({ success: true, order: orders[idx] });
     }
 
-    if (supabase) {
-      try {
-        if (orderIndex > -1) {
-          console.log(`[Supabase] Authoritatively upserting full details and status for order ${id} to ${status}...`);
-          const { error } = await supabase
-            .from("orders")
-            .upsert({
-              id: updatedOrder.id,
-              shipping_details: updatedOrder.shippingDetails || null,
-              cart: updatedOrder.cart || null,
-              grand_total: updatedOrder.grandTotal || null,
-              created_at: updatedOrder.createdAt || new Date().toISOString(),
-              status: updatedOrder.status,
-              order_time: updatedOrder.orderTime || new Date(updatedOrder.createdAt || new Date()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-            });
-          if (error) {
-            console.log(`[Supabase Status] Failed to upsert order ${id} (pending table setup):`, error.message);
-          } else {
-            console.log(`[Supabase] Successfully upserted order ${id} with status ${status}.`);
-          }
-        } else {
-          console.log(`[Supabase] Row is not in local JSON. Performing status-only update for order ${id} to ${status}...`);
-          const { error } = await supabase
-            .from("orders")
-            .update({ status })
-            .eq("id", id);
-          if (error) {
-            console.log(`[Supabase Status] Failed to update order ${id} status (pending table setup):`, error.message);
-          } else {
-            console.log(`[Supabase] Successfully updated status for order ${id}.`);
-          }
-        }
-      } catch (err: any) {
-        console.log(`[Supabase Status] Exception during order ${id} update/upsert:`, err.message || err);
-      }
+    const { data, error } = await supabase.from("orders").update({ status }).eq("id", id).select().maybeSingle();
+    if (error) {
+      return res.status(502).json({ error: "Failed to update order status.", details: error.message });
     }
-
-    res.json({ success: true, order: updatedOrder });
+    if (!data) {
+      return res.status(404).json({ error: "Order not found." });
+    }
+    res.json({ success: true, order: mapOrderRow(data) });
   });
 
   // Admin DELETE Endpoint: Clear all admin logs/data
   app.delete("/api/admin/clear", async (req, res) => {
-    saveJSON(INQUIRIES_FILE, []);
-    saveJSON(ORDERS_FILE, []);
-
-    if (supabase) {
-      try {
-        console.log("[Supabase] Clearing tables 'orders' and 'inquiries' in Supabase...");
-        const { error: ordError } = await supabase.from("orders").delete().neq("id", "");
-        const { error: inqError } = await supabase.from("inquiries").delete().neq("id", "");
-        
-        if (ordError || inqError) {
-          console.log("[Supabase Status] Failed to clear tables (pending table setup):", ordError?.message, inqError?.message);
-        } else {
-          console.log("[Supabase] Successfully cleared all data in Supabase tables.");
-        }
-      } catch (err) {
-        console.log("[Supabase Status] Exception clearing tables:", err);
-      }
+    if (!supabase) {
+      saveJSON(INQUIRIES_FILE, []);
+      saveJSON(ORDERS_FILE, []);
+      return res.json({ success: true, message: "All local database logs cleared." });
     }
 
-    res.json({ success: true, message: "All local and Supabase database logs cleared." });
+    try {
+      const { error: ordItemsError } = await supabase.from("order_items").delete().neq("order_id", "");
+      const { error: ordError } = await supabase.from("orders").delete().neq("id", "");
+      const { error: inqError } = await supabase.from("inquiries").delete().neq("id", "");
+
+      if (ordError || inqError || ordItemsError) {
+        return res.status(502).json({
+          success: false,
+          error: "Failed to fully clear Supabase tables.",
+          details: { ordError: ordError?.message, inqError: inqError?.message, ordItemsError: ordItemsError?.message },
+        });
+      }
+      res.json({ success: true, message: "All Supabase database logs cleared." });
+    } catch (err: any) {
+      res.status(502).json({ success: false, error: err.message || String(err) });
+    }
   });
 
   // Admin Single Record Delete Endpoint
@@ -1144,42 +882,25 @@ The Resin Grove Automation`;
         return res.status(400).json({ error: "Missing required parameters (id, type) to delete." });
       }
 
-      console.log(`[Admin API] Request received to delete ${type} with ID: ${id}`);
-
       if (type === "order") {
-        const orders = loadJSON<any[]>(ORDERS_FILE, []);
-        const filtered = orders.filter(o => o.id !== id);
-        saveJSON(ORDERS_FILE, filtered);
-
-        if (supabase) {
-          try {
-            console.log(`[Supabase] Row delete request for order ${id}...`);
-            const { error } = await supabase.from("orders").delete().eq("id", id);
-            if (error) {
-              console.warn(`[Supabase Status] Error during row deletion for order ${id}:`, error.message);
-            } else {
-              console.log(`[Supabase] Successfully deleted row for order ${id}.`);
-            }
-          } catch (err) {
-            console.error(`[Supabase Status Exception] on deleting order ${id}:`, err);
+        if (!supabase) {
+          const orders = loadJSON<any[]>(ORDERS_FILE, []);
+          saveJSON(ORDERS_FILE, orders.filter((o) => o.id !== id));
+        } else {
+          await supabase.from("order_items").delete().eq("order_id", id);
+          const { error } = await supabase.from("orders").delete().eq("id", id);
+          if (error) {
+            return res.status(502).json({ error: "Failed to delete order.", details: error.message });
           }
         }
       } else if (type === "inquiry") {
-        const inquiries = loadJSON<any[]>(INQUIRIES_FILE, []);
-        const filtered = inquiries.filter(i => i.id !== id);
-        saveJSON(INQUIRIES_FILE, filtered);
-
-        if (supabase) {
-          try {
-            console.log(`[Supabase] Row delete request for inquiry ${id}...`);
-            const { error } = await supabase.from("inquiries").delete().eq("id", id);
-            if (error) {
-              console.warn(`[Supabase Status] Error during row deletion for inquiry ${id}:`, error.message);
-            } else {
-              console.log(`[Supabase] Successfully deleted row for inquiry ${id}.`);
-            }
-          } catch (err) {
-            console.error(`[Supabase Status Exception] on deleting inquiry ${id}:`, err);
+        if (!supabase) {
+          const inquiries = loadJSON<any[]>(INQUIRIES_FILE, []);
+          saveJSON(INQUIRIES_FILE, inquiries.filter((i) => i.id !== id));
+        } else {
+          const { error } = await supabase.from("inquiries").delete().eq("id", id);
+          if (error) {
+            return res.status(502).json({ error: "Failed to delete inquiry.", details: error.message });
           }
         }
       } else {
@@ -1196,15 +917,11 @@ The Resin Grove Automation`;
   // Vite middleware for development (using SPA routing fallback)
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
-      server: { 
+      server: {
         middlewareMode: true,
         watch: {
-          ignored: [
-            "**/inquiries.json",
-            "**/orders.json",
-            "**/*.json"
-          ]
-        }
+          ignored: ["**/inquiries.json", "**/orders.json", "**/*.json"],
+        },
       },
       appType: "spa",
     });
@@ -1219,9 +936,8 @@ The Resin Grove Automation`;
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`The Resin Grove Full-Stack Server running on port ${PORT}`);
-    // Start background local data check & synchronization
-    syncLocalDataToSupabase();
+    console.log(supabase ? "[Storage] Supabase is the active source of truth." : "[Storage] Running in local JSON fallback mode.");
   });
 }
-
+console.log("### RUNNING UPDATED SERVER v2 — Supabase-only writes ###");
 startServer();

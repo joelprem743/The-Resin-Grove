@@ -1,9 +1,11 @@
+// src/context/ShopContext.tsx
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { CheckCircle, X } from "lucide-react";
 import { Product, CartItem } from "../types";
 import { PRODUCTS } from "../data";
-import { supabase, isSupabaseConfigured, syncCartToSupabase, loadCartFromSupabase } from "../lib/supabase";
+import { supabase, isSupabaseConfigured, syncCartToSupabase, loadCartFromSupabase, syncWishlistToSupabase, loadWishlistFromSupabase, initializeSupabase } from "../lib/supabase";
+
 
 interface ShopContextType {
   cart: CartItem[];
@@ -79,6 +81,38 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<{ id: string; email: string; name?: string; isMock?: boolean } | null>(null);
   const [isSyncingCart, setIsSyncingCart] = useState(false);
 
+  const [supabaseConfigured, setSupabaseConfigured] = useState(isSupabaseConfigured);
+  const [supabaseReady, setSupabaseReady] = useState(false);
+
+  const [isSyncingWishlist, setIsSyncingWishlist] = useState(false);
+
+  // Dynamically fetch Supabase credentials from the Express server at runtime
+  useEffect(() => {
+    const fetchConfigAndInit = async () => {
+      try {
+        const res = await fetch("/api/supabase-config");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.initialized && data.supabaseUrl && data.supabaseAnonKey) {
+            initializeSupabase(data.supabaseUrl, data.supabaseAnonKey);
+            setSupabaseConfigured(true);
+            setSupabaseReady(true);
+            console.log("[Supabase Sync] Dynamic runtime configuration successful.");
+          } else {
+            console.log("[Supabase Sync] Dynamic configuration: Server running in local file mode.");
+            setSupabaseReady(true);
+          }
+        } else {
+          setSupabaseReady(true);
+        }
+      } catch (err) {
+        console.error("[Supabase Sync] Failed to fetch dynamic Supabase configuration:", err);
+        setSupabaseReady(true);
+      }
+    };
+    fetchConfigAndInit();
+  }, []);
+
   // Listen to real Supabase auth state changes
   useEffect(() => {
     if (supabase) {
@@ -110,52 +144,56 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         subscription.unsubscribe();
       };
     }
-  }, []);
+  }, [supabaseReady]);
 
+  // Load cart from Supabase when user logs in
+  // Load cart from Supabase when user logs in
   // Load cart from Supabase when user logs in
   useEffect(() => {
     const loadUserCart = async () => {
-      if (!user) return;
-      
-      if (user.isMock) {
-        // Mock user can just use localStorage, which is already loaded on mount
-        return;
-      }
+      if (!user || user.isMock) return;
       
       if (isSupabaseConfigured && supabase) {
         setIsSyncingCart(true);
         try {
           const dbItems = await loadCartFromSupabase(user.id);
-          if (dbItems && dbItems.length > 0) {
-            const loadedCart: CartItem[] = dbItems.map((dbItem) => {
-              const product = PRODUCTS.find((p) => p.id === dbItem.product_id);
-              const resolvedProduct: Product = product || {
-                id: dbItem.product_id,
-                name: "Custom Resin Piece",
-                price: 25.00,
-                category: "Custom Gifts",
-                image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=500&q=80",
-                description: "Preserved custom artisan artwork.",
-                rating: 5.0,
-                reviewsCount: 1,
-                dimensions: "Varies",
-                materials: ["Resin"],
-                inStock: true,
-                features: []
-              };
+          
+          // 1. Map DB items to CartItem format
+          const dbStandardItems: CartItem[] = (dbItems || []).map((dbItem) => {
+            const product = PRODUCTS.find((p) => p.id === dbItem.product_id);
+            if (!product) return null;
+            return { product, quantity: dbItem.quantity };
+          }).filter((item): item is CartItem => item !== null);
 
-              return {
-                product: resolvedProduct,
-                quantity: dbItem.quantity,
-                selectedWood: dbItem.selected_wood || undefined,
-                selectedResinColor: dbItem.selected_resin_color || undefined,
-                selectedDeco: dbItem.selected_deco || undefined,
-                personalizationText: dbItem.personalization_text || undefined,
-              };
+          // 2. Merge with local cart (preserves custom items, avoids doubling quantities)
+          setCart((prevLocalCart) => {
+            // Start with the DB items as the source of truth
+            const mergedCart = [...dbStandardItems];
+            
+            prevLocalCart.forEach((localItem) => {
+              const isCustom = !!localItem.selectedWood || !!localItem.selectedResinColor;
+              
+              if (isCustom) {
+                // Always keep custom items from local storage (they aren't in Supabase)
+                mergedCart.push(localItem);
+              } else {
+                // For standard items, only add to merged cart if it's NOT already in the DB cart
+                const existsInDb = dbStandardItems.some(
+                  (dbItem) => dbItem.product.id === localItem.product.id
+                );
+                
+                if (!existsInDb) {
+                  mergedCart.push(localItem);
+                }
+                // If it exists in DB, we intentionally skip it so we don't double the quantity!
+              }
             });
+            
+            return mergedCart;
+          });
 
-            setCart(loadedCart);
-            showToast("Cart Synchronized", `Restored ${loadedCart.length} items from your collector profile.`);
+          if (dbStandardItems.length > 0) {
+            showToast("Cart Synchronized", `Restored ${dbStandardItems.length} items from your collector profile.`);
           }
         } catch (err) {
           console.error("Failed to load cart from Supabase:", err);
@@ -167,6 +205,80 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     loadUserCart();
   }, [user]);
+
+  // Load wishlist from Supabase when user logs in
+  useEffect(() => {
+    const loadUserWishlist = async () => {
+      if (!user || user.isMock) return;
+      
+      if (isSupabaseConfigured && supabase) {
+        setIsSyncingWishlist(true);
+        try {
+          const dbItems = await loadWishlistFromSupabase(user.id);
+          
+          // 1. Map DB items to Product format
+          const dbWishlist: Product[] = (dbItems || []).map((dbItem) => {
+            const product = PRODUCTS.find((p) => p.id === dbItem.product_id);
+            return product;
+          }).filter((p): p is Product => Boolean(p));
+  
+          // 2. Merge with local wishlist
+          setWishlist((prevLocalWishlist) => {
+            const mergedWishlist = [...dbWishlist];
+            
+            prevLocalWishlist.forEach((localItem) => {
+              const existsInDb = mergedWishlist.some(
+                (dbItem) => dbItem.id === localItem.id
+              );
+              
+              // Only add local items if they aren't already in the DB wishlist
+              if (!existsInDb) {
+                mergedWishlist.push(localItem);
+              }
+            });
+            
+            return mergedWishlist;
+          });
+        } catch (err) {
+          console.error("Failed to load wishlist from Supabase:", err);
+        } finally {
+          setIsSyncingWishlist(false);
+        }
+      }
+    };
+  
+    loadUserWishlist();
+  }, [user]);
+
+    // Load wishlist from Supabase when user logs in
+  // Load wishlist from Supabase when user logs in
+  useEffect(() => {
+    const loadUserWishlist = async () => {
+      if (!user || user.isMock) return;
+      
+      if (isSupabaseConfigured && supabase) {
+        setIsSyncingWishlist(true);
+        try {
+          const dbItems = await loadWishlistFromSupabase(user.id);
+          if (dbItems && dbItems.length > 0) {
+            // Use a type guard to filter out undefined safely
+            const loadedWishlist = dbItems.map((dbItem) => {
+              return PRODUCTS.find((p) => p.id === dbItem.product_id);
+            }).filter((p): p is Product => Boolean(p));
+  
+            setWishlist(loadedWishlist);
+          }
+        } catch (err) {
+          console.error("Failed to load wishlist from Supabase:", err);
+        } finally {
+          setIsSyncingWishlist(false);
+        }
+      }
+    };
+  
+    loadUserWishlist();
+  }, [user]);
+
 
   // Save cart to localStorage on changes & sync to Supabase
   useEffect(() => {
@@ -188,9 +300,24 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [cart, user, isSyncingCart]);
 
   // Save wishlist to localStorage on changes
+  // Save wishlist to localStorage on changes & sync to Supabase
   useEffect(() => {
     localStorage.setItem("resingrove_wishlist", JSON.stringify(wishlist));
-  }, [wishlist]);
+
+    if (isSyncingWishlist) return;
+
+    const syncWishlist = async () => {
+      if (user && !user.isMock && isSupabaseConfigured) {
+        await syncWishlistToSupabase(user.id, wishlist);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      syncWishlist();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [wishlist, user, isSyncingWishlist]);
 
   // Helper to generate a unique key for custom configurations
   const getConfigKey = (
@@ -330,7 +457,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         selectedCategory,
         user,
         setUser,
-        isSupabaseConfigured,
+        isSupabaseConfigured: supabaseConfigured,
         setCartOpen,
         setWishlistOpen,
         setAccountOpen,

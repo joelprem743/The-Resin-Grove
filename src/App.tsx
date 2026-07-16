@@ -51,19 +51,19 @@ export default function App() {
           <WhyChooseUs />
 
           {/* Interactive Custom Resin Creator Playground */}
-          <CustomBuilder />
+          {/* <CustomBuilder /> */}
 
           {/* Custom Gifting and bouquet preservations */}
-          <CustomOrders />
+          {/* <CustomOrders /> */}
 
           {/* Verified Customer Reviews with Submission form */}
           <Testimonials />
 
           {/* Instagram photo mosaic gallery */}
-          <InstagramGallery />
+          {/* <InstagramGallery /> */}
 
           {/* Elegant email signup banner */}
-          <Newsletter />
+          {/* <Newsletter /> */}
 
           {/* Contact coordinates, form, and stylized map */}
           <Contact />

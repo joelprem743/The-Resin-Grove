@@ -112,13 +112,13 @@ export default function Hero() {
                   <span>Shop Collection</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </a>
-                <a
+                {/* <a
                   href="#custom-builder"
                   className="px-8 py-4 bg-transparent hover:bg-brand-forest/5 border border-[#C9A76A] text-[#C9A76A] rounded-[2px] text-xs font-bold uppercase tracking-[1px] transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Compass className="w-3.5 h-3.5" />
                   <span>Custom Commissions</span>
-                </a>
+                </a> */}
               </div>
 
               {/* Trust Indicators */}

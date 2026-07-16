@@ -9,7 +9,8 @@ import {
   CheckCircle,
   Truck,
   Flame,
-  Mail
+  Mail,
+  AlertTriangle
 } from "lucide-react";
 
 const ADMIN_EMAIL = "orders@theresingrove.com"; // Placeholder email that can be customized easily
@@ -27,7 +28,8 @@ export default function CartDrawer() {
     showToast
   } = useShop();
 
-  const [checkoutStep, setCheckoutStep] = useState<"idle" | "billing" | "processing" | "success">("idle");
+  const [checkoutStep, setCheckoutStep] = useState<"idle" | "billing" | "processing" | "success" | "error">("idle");
+  const [checkoutError, setCheckoutError] = useState<string>("");
   const [shippingDetails, setShippingDetails] = useState({ 
     name: "", 
     email: "", 
@@ -112,6 +114,7 @@ export default function CartDrawer() {
     }
 
     setOrderTotal(grandTotal);
+    setCheckoutError("");
     setCheckoutStep("processing");
 
     // Post to Express backend API
@@ -124,9 +127,15 @@ export default function CartDrawer() {
         grandTotal
       })
     })
-    .then((res) => {
-      if (!res.ok) throw new Error("Order submission failed");
-      return res.json();
+    .then(async (res) => {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        // Surface the real backend error (e.g. Supabase write failure) instead of
+        // silently pretending the order succeeded.
+        const message = data?.error || `Order submission failed (status ${res.status}).`;
+        throw new Error(message);
+      }
+      return data;
     })
     .then((data) => {
       if (data && data.order) {
@@ -135,20 +144,20 @@ export default function CartDrawer() {
       if (data && data.previewUrl) {
         setCreatedOrderPreviewUrl(data.previewUrl);
       }
-      // Clear cart immediately upon successful checkout!
+      // Only clear the cart and show success once the order is confirmed saved.
       clearCart();
-      // Simulate luxury resin pour progress steps for full immersion
       setTimeout(() => {
         setCheckoutStep("success");
-      }, 3000);
+      }, 1500);
     })
     .catch((err) => {
       console.error("API Order error:", err);
-      // Fallback fallback so user is never blocked, clear cart as well
-      clearCart();
-      setTimeout(() => {
-        setCheckoutStep("success");
-      }, 2000);
+      // Do NOT clear the cart and do NOT show success — the order was not saved.
+      // Let the customer retry instead of thinking their order went through.
+      setCheckoutError(
+        err?.message || "We couldn't save your order right now. Please try again in a moment."
+      );
+      setCheckoutStep("error");
     });
   };
 
@@ -423,18 +432,40 @@ export default function CartDrawer() {
                   </div>
 
                   <div className="space-y-2">
-                    <h4 className="font-serif text-lg font-normal text-[#1A1A1A]">Mixing Your Art Piece...</h4>
+                    <h4 className="font-serif text-lg font-normal text-[#1A1A1A]">Confirming Your Order...</h4>
                     <p className="text-xs text-[#5A5A5A] max-w-xs mx-auto leading-relaxed">
-                      We are simulating our actual 7-stage custom craft: weighing epoxy blocks, casting botanical inclusions, degassing microbubbles, and polishing the glasslike dome...
+                      Saving your curation request to our studio records and notifying the design team.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Step: Order failed to save */}
+              {checkoutStep === "error" && (
+                <div className="text-center py-12 space-y-6">
+                  <div className="w-16 h-16 bg-red-50 border border-red-200 text-red-500 rounded-[2px] flex items-center justify-center mx-auto">
+                    <AlertTriangle className="w-8 h-8" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <span className="text-[9px] uppercase tracking-widest font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-1 rounded-[2px]">Order Not Saved</span>
+                    <h4 className="font-serif text-xl font-normal text-[#1A1A1A]">Something Went Wrong</h4>
+                    <p className="text-xs text-[#5A5A5A] max-w-xs mx-auto leading-relaxed">
+                      {checkoutError}
+                    </p>
+                    <p className="text-[11px] text-[#5A5A5A]/80 max-w-xs mx-auto leading-relaxed">
+                      Your bag has been kept as-is. Please try again, or contact us directly at <strong>{ADMIN_EMAIL}</strong> if this keeps happening.
                     </p>
                   </div>
 
-                  {/* Flow progress indicators */}
-                  <ul className="text-left text-[11px] font-sans space-y-2 max-w-[240px] mx-auto text-[#1A1A1A] font-medium">
-                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-[#C9A76A] rounded-[2px]" /> Measuring precise wood-resin seams</li>
-                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-[#C9A76A] rounded-[2px]" /> Pouring Aegean turquoise waves</li>
-                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-[#C9A76A] rounded-[2px] animate-ping" /> Laser engraving custom monogram</li>
-                  </ul>
+                  <div className="flex gap-2 max-w-xs mx-auto">
+                    <button
+                      onClick={() => setCheckoutStep("billing")}
+                      className="w-full py-3 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white rounded-[2px] text-xs font-bold uppercase tracking-[1px] cursor-pointer transition-colors"
+                    >
+                      Try Again
+                    </button>
+                  </div>
                 </div>
               )}
 

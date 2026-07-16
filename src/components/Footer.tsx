@@ -46,8 +46,6 @@ export default function Footer() {
               <li><a href="#shop" className="hover:text-white transition-colors duration-200">Featured Art</a></li>
               <li><a href="#categories" className="hover:text-white transition-colors duration-200 font-bold text-[#C9A76A]">Shop Categories</a></li>
               <li><a href="#bestsellers" className="hover:text-white transition-colors duration-200">Best Sellers</a></li>
-              <li><a href="#custom-builder" className="hover:text-white transition-colors duration-200">Artisan Customizer</a></li>
-              <li><a href="#custom-orders" className="hover:text-white transition-colors duration-200">Preservation Orders</a></li>
             </ul>
           </div>
 
@@ -59,10 +57,8 @@ export default function Footer() {
               <li><a href="#shop" className="hover:text-white transition-colors duration-200">Photo Frames</a></li>
               <li><a href="#shop" className="hover:text-white transition-colors duration-200 font-bold">Wall Clocks</a></li>
               <li><a href="#shop" className="hover:text-white transition-colors duration-200">Serving Trays</a></li>
-              <li><a href="#shop" className="hover:text-white transition-colors duration-200">Coasters</a></li>
               <li><a href="#shop" className="hover:text-white transition-colors duration-200 text-[#C9A76A] font-bold">Resin Jewelry</a></li>
               <li><a href="#shop" className="hover:text-white transition-colors duration-200">Bookmarks</a></li>
-              <li><a href="#shop" className="hover:text-white transition-colors duration-200">Name Plates</a></li>
             </ul>
           </div>
 
@@ -74,7 +70,6 @@ export default function Footer() {
               <li><a href="#reviews" className="hover:text-white transition-colors duration-200">Submit Review</a></li>
               <li><a href="#custom-orders" className="hover:text-white transition-colors duration-200">Special Bouquets FAQ</a></li>
               <li><span className="text-[#C9A76A] font-medium">Eco Resin Caring Guide</span></li>
-              <li><button onClick={() => setAdminOpen(true)} className="hover:text-[#C9A76A] font-semibold text-left transition-colors cursor-pointer text-xs text-[#A0A0A0]">Artisan Admin Workspace</button></li>
             </ul>
           </div>
 

@@ -36,11 +36,10 @@ export default function AdminDashboard() {
   const [inquiries, setInquiries] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"inquiries" | "orders" | "analytics">("inquiries");
+  
+  // Changed default active tab to "orders" so it shows first
+  const [activeTab, setActiveTab] = useState<"inquiries" | "orders" | "analytics">("orders");
   const [filterStatus, setFilterStatus] = useState("All");
-  const [supabaseStatus, setSupabaseStatus] = useState<any | null>(null);
-  const [syncing, setSyncing] = useState(false);
-  const [showSetupSql, setShowSetupSql] = useState(false);
 
   // Detail Modal target
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
@@ -75,53 +74,10 @@ export default function AdminDashboard() {
       } catch (err) {
         console.error("Error fetching orders:", err);
       }
-
-      // 3. Fetch Supabase Status
-      try {
-        const dbRes = await fetch("/api/admin/supabase-status");
-        if (dbRes && dbRes.ok) {
-          const dbData = await dbRes.json();
-          setSupabaseStatus(dbData);
-          if (dbData.initialized && (!dbData.ordersTableOk || !dbData.inquiriesTableOk)) {
-            setShowSetupSql(true);
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching Supabase status:", err);
-      }
     } catch (err) {
       console.error("Error fetching admin data:", err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Sync now action
-  const handleSyncNow = async () => {
-    setSyncing(true);
-    try {
-      const res = await fetch("/api/admin/sync-now", {
-        method: "POST",
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success) {
-          showToast(
-            "Sync Successful",
-            `Successfully synced ${data.syncedOrders} orders and ${data.syncedInquiries} inquiries to Supabase!`
-          );
-          await fetchData();
-        } else {
-          showToast("Sync Error", data.error || "Failed to sync records.");
-        }
-      } else {
-        showToast("Sync Error", "Server returned an error status during sync.");
-      }
-    } catch (err) {
-      console.error("Error running sync:", err);
-      showToast("Sync Error", "Could not connect to the sync endpoint.");
-    } finally {
-      setSyncing(false);
     }
   };
 
@@ -140,7 +96,7 @@ export default function AdminDashboard() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === "admin" || password === "groveadmin") {
+    if (password === "zhufu@13" || password === "groveadmin") {
       setIsAuthenticated(true);
       setAuthError("");
     } else {
@@ -383,18 +339,8 @@ export default function AdminDashboard() {
 
               {/* Toolbar Actions & Workspace Tabs */}
               <div className="px-6 py-3 border-b border-brand-sand/35 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0">
-                {/* Tabs */}
+                {/* Tabs - Swapped Order */}
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => { setActiveTab("inquiries"); setFilterStatus("All"); }}
-                    className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-[2px] border transition-all duration-200 cursor-pointer ${
-                      activeTab === "inquiries"
-                        ? "bg-[#1A1A1A] text-white border-[#1A1A1A]"
-                        : "bg-transparent text-[#5A5A5A] border-brand-sand hover:bg-[#FAF8F5]"
-                    }`}
-                  >
-                    Custom Inquiries ({inquiries.length})
-                  </button>
                   <button
                     onClick={() => { setActiveTab("orders"); setFilterStatus("All"); }}
                     className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-[2px] border transition-all duration-200 cursor-pointer ${
@@ -404,6 +350,16 @@ export default function AdminDashboard() {
                     }`}
                   >
                     Boutique Orders ({orders.length})
+                  </button>
+                  <button
+                    onClick={() => { setActiveTab("inquiries"); setFilterStatus("All"); }}
+                    className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-[2px] border transition-all duration-200 cursor-pointer ${
+                      activeTab === "inquiries"
+                        ? "bg-[#1A1A1A] text-white border-[#1A1A1A]"
+                        : "bg-transparent text-[#5A5A5A] border-brand-sand hover:bg-[#FAF8F5]"
+                    }`}
+                  >
+                    Custom Inquiries ({inquiries.length})
                   </button>
                 </div>
 
@@ -480,178 +436,6 @@ export default function AdminDashboard() {
 
               {/* Live Lists scroll box */}
               <div className="flex-grow overflow-y-auto p-6 bg-white space-y-6">
-                {/* Supabase Integration Advisor */}
-                {supabaseStatus && (
-                  <div className={`p-4 border rounded-[2px] text-xs leading-relaxed space-y-3 ${
-                    supabaseStatus.initialized 
-                      ? (supabaseStatus.ordersTableOk && supabaseStatus.inquiriesTableOk)
-                        ? "bg-green-50/50 border-green-200 text-green-800"
-                        : "bg-amber-50/60 border-amber-300 text-amber-900"
-                      : "bg-gray-50 border-gray-300 text-gray-800"
-                  }`}>
-                    <div className="flex items-center justify-between font-bold text-sm">
-                      <div className="flex items-center gap-1.5">
-                        <span className="relative flex h-2 w-2">
-                          <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                            supabaseStatus.initialized ? "bg-green-400" : "bg-red-400"
-                          }`}></span>
-                          <span className={`relative inline-flex rounded-full h-2 w-2 ${
-                            supabaseStatus.initialized ? "bg-green-500" : "bg-red-500"
-                          }`}></span>
-                        </span>
-                        <span>Supabase Sync Service Status</span>
-                      </div>
-                      <span className="font-mono text-[10px] bg-white/60 px-1.5 py-0.5 rounded border font-bold">
-                        {supabaseStatus.initialized ? "CONNECTED" : "LOCAL MODE ONLY"}
-                      </span>
-                    </div>
-
-                    {!supabaseStatus.initialized ? (
-                      <p className="text-[#5a5a5a]">
-                        The database integration is running in offline local file mode. To sync with your cloud Supabase database, please add your <code className="font-mono bg-gray-100 px-1 rounded text-red-600">VITE_SUPABASE_URL</code> and <code className="font-mono bg-gray-100 px-1 rounded text-red-600">VITE_SUPABASE_ANON_KEY</code> variables in your environment or secrets config.
-                      </p>
-                    ) : (
-                      <div className="space-y-2">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-2">
-                          <p className="text-[#5a5a5a]">
-                            Connected to: <code className="font-mono text-[11px] bg-white/70 px-1.5 py-0.5 rounded border">{supabaseStatus.url}</code>
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => setShowSetupSql(!showSetupSql)}
-                            className="text-[10px] text-[#C9A76A] hover:text-[#bfa065] font-bold flex items-center gap-1 cursor-pointer bg-white border border-[#C9A76A]/20 px-2.5 py-1 rounded-[2px] transition-colors hover:bg-[#FAF8F5] uppercase tracking-wider"
-                          >
-                            <span>{showSetupSql ? "Hide SQL Setup" : "Copy/View SQL Setup"}</span>
-                          </button>
-                        </div>
-                        
-                        {/* Table validation */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                          <div className={`p-2.5 rounded-[2px] border ${
-                            supabaseStatus.ordersTableOk ? "bg-green-100/40 border-green-300 text-green-900" : "bg-red-50 border-red-200 text-red-900"
-                          }`}>
-                            <div className="font-bold flex justify-between items-center">
-                              <span>Table: orders</span>
-                              <span className={supabaseStatus.ordersTableOk ? "text-green-700" : "text-red-700"}>
-                                {supabaseStatus.ordersTableOk ? "✓ Active & Connected" : "✗ Missing"}
-                              </span>
-                            </div>
-                            {!supabaseStatus.ordersTableOk && (
-                              <p className="text-[10px] text-red-600/90 mt-1">
-                                Error: {supabaseStatus.errorOrders || "Relation 'orders' does not exist."}
-                              </p>
-                            )}
-                          </div>
-
-                          <div className={`p-2.5 rounded-[2px] border ${
-                            supabaseStatus.inquiriesTableOk ? "bg-green-100/40 border-green-300 text-green-900" : "bg-red-50 border-red-200 text-red-900"
-                          }`}>
-                            <div className="font-bold flex justify-between items-center">
-                              <span>Table: inquiries</span>
-                              <span className={supabaseStatus.inquiriesTableOk ? "text-green-700" : "text-red-700"}>
-                                {supabaseStatus.inquiriesTableOk ? "✓ Active & Connected" : "✗ Missing"}
-                              </span>
-                            </div>
-                            {!supabaseStatus.inquiriesTableOk && (
-                              <p className="text-[10px] text-red-600/90 mt-1">
-                                Error: {supabaseStatus.errorInquiries || "Relation 'inquiries' does not exist."}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-
-                        {(showSetupSql || !supabaseStatus.ordersTableOk || !supabaseStatus.inquiriesTableOk) && (
-                          <div className="bg-white p-3 rounded border border-amber-200 mt-2 text-[#4a3618] space-y-2 shadow-xs">
-                            <p className="font-bold">⚠️ Action Required: Create Tables in Supabase</p>
-                            <p className="text-[11px]">
-                              Your Supabase database has mismatched, missing, or cached tables. Paste this script into the <strong>SQL Editor</strong> in your Supabase Dashboard to reset and configure them with the correct columns:
-                            </p>
-                            <pre className="text-[10px] font-mono bg-slate-900 text-slate-100 p-2.5 rounded overflow-x-auto select-all max-h-[160px] leading-relaxed">
-{`-- 1. Drop existing conflicting tables to clear old schemas
-DROP TABLE IF EXISTS orders CASCADE;
-DROP TABLE IF EXISTS inquiries CASCADE;
-
--- 2. Create orders table with correct column structures
-CREATE TABLE orders (
-  id TEXT PRIMARY KEY,
-  shipping_details JSONB,
-  cart JSONB,
-  grand_total NUMERIC,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  status TEXT,
-  order_time TEXT
-);
-
--- 3. Create inquiries table with correct column structures
-CREATE TABLE inquiries (
-  id TEXT PRIMARY KEY,
-  name TEXT,
-  email TEXT,
-  project_type TEXT,
-  budget TEXT,
-  description TEXT,
-  delivery_date TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  status TEXT,
-  configuration JSONB
-);
-
--- 4. Enable Row-Level Security (RLS) and define permissive policies
--- This ensures that even if you have RLS enabled, reads and writes will succeed.
-ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE inquiries ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Allow public access to orders" ON orders;
-CREATE POLICY "Allow public access to orders" ON orders FOR ALL TO public USING (true) WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Allow public access to inquiries" ON inquiries;
-CREATE POLICY "Allow public access to inquiries" ON inquiries FOR ALL TO public USING (true) WITH CHECK (true);
-
--- 5. Grant explicit table privileges to all API roles
-GRANT ALL ON TABLE orders TO postgres, anon, authenticated, service_role;
-GRANT ALL ON TABLE inquiries TO postgres, anon, authenticated, service_role;
-
--- 6. Force Supabase PostgREST to reload the API schema cache
-NOTIFY pgrst, 'reload schema';`}
-                            </pre>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const sql = `-- 1. Drop existing conflicting tables to clear old schemas\nDROP TABLE IF EXISTS orders CASCADE;\nDROP TABLE IF EXISTS inquiries CASCADE;\n\n-- 2. Create orders table with correct column structures\nCREATE TABLE orders (\n  id TEXT PRIMARY KEY,\n  shipping_details JSONB,\n  cart JSONB,\n  grand_total NUMERIC,\n  created_at TIMESTAMPTZ DEFAULT NOW(),\n  status TEXT,\n  order_time TEXT\n);\n\n-- 3. Create inquiries table with correct column structures\nCREATE TABLE inquiries (\n  id TEXT PRIMARY KEY,\n  name TEXT,\n  email TEXT,\n  project_type TEXT,\n  budget TEXT,\n  description TEXT,\n  delivery_date TEXT,\n  created_at TIMESTAMPTZ DEFAULT NOW(),\n  status TEXT,\n  configuration JSONB\n);\n\n-- 4. Enable Row-Level Security (RLS) and define permissive policies\nALTER TABLE orders ENABLE ROW LEVEL SECURITY;\nALTER TABLE inquiries ENABLE ROW LEVEL SECURITY;\n\nDROP POLICY IF EXISTS "Allow public access to orders" ON orders;\nCREATE POLICY "Allow public access to orders" ON orders FOR ALL TO public USING (true) WITH CHECK (true);\n\nDROP POLICY IF EXISTS "Allow public access to inquiries" ON inquiries;\nCREATE POLICY "Allow public access to inquiries" ON inquiries FOR ALL TO public USING (true) WITH CHECK (true);\n\n-- 5. Grant explicit table privileges to all API roles\nGRANT ALL ON TABLE orders TO postgres, anon, authenticated, service_role;\nGRANT ALL ON TABLE inquiries TO postgres, anon, authenticated, service_role;\n\n-- 6. Force Supabase PostgREST to reload the API schema cache\nNOTIFY pgrst, 'reload schema';`;
-                                navigator.clipboard.writeText(sql);
-                                showToast("SQL Copied", "Copy the SQL into your Supabase SQL Editor and run it!");
-                              }}
-                              className="px-3 py-1.5 bg-[#C9A76A] hover:bg-[#bfa065] text-white rounded-[2px] font-bold text-[10px] uppercase cursor-pointer"
-                            >
-                              Copy Setup SQL
-                            </button>
-                          </div>
-                        )}
-
-                        {/* Sync controls */}
-                        <div className="pt-3 border-t border-gray-200/60 mt-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                          <div className="text-[11px] text-[#5A5A5A] max-w-sm">
-                            If you have existing orders or inquiries saved locally from offline mode, you can push them directly to Supabase now.
-                          </div>
-                          <button
-                            type="button"
-                            disabled={syncing || !supabaseStatus.ordersTableOk || !supabaseStatus.inquiriesTableOk}
-                            onClick={handleSyncNow}
-                            className={`px-3 py-1.5 text-white rounded-[2px] font-bold text-[10px] uppercase cursor-pointer flex items-center gap-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                              (supabaseStatus.ordersTableOk && supabaseStatus.inquiriesTableOk)
-                                ? "bg-green-600 hover:bg-green-700"
-                                : "bg-gray-400"
-                            }`}
-                          >
-                            <RefreshCw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
-                            <span>{syncing ? "Syncing..." : "Sync Local Data"}</span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
                 {loading && inquiries.length === 0 && orders.length === 0 ? (
                   <div className="text-center py-20">
                     <RefreshCw className="w-8 h-8 animate-spin text-[#C9A76A] mx-auto mb-2" />

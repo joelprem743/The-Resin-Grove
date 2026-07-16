@@ -48,8 +48,7 @@ export default function Contact() {
 
   const studioInfo = [
     { label: "Direct Phone", detail: "+1 (503) 555-0142", icon: Phone },
-    { label: "Studio Email", detail: "hello@theresingrove.com", icon: Mail },
-    { label: "Working Hours", detail: "Monday – Saturday, 9:00 AM – 6:00 PM PST", icon: Clock }
+    { label: "Studio Email", detail: "hello@theresingrove.com", icon: Mail }
   ];
 
   return (

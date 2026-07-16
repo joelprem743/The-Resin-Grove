@@ -12,7 +12,8 @@ import {
   Info, 
   MessageSquare, 
   Mail,
-  Flame
+  Flame,
+  Settings // Added Settings icon for Admin
 } from "lucide-react";
 import { useShop } from "../context/ShopContext";
 import logoImg from "../assets/images/resin_grove_logo_1783539346251.jpg";
@@ -24,6 +25,7 @@ export default function Navbar() {
     setCartOpen, 
     setWishlistOpen, 
     setAccountOpen,
+    setAdminOpen, // Added setAdminOpen from context
     searchTerm,
     setSearchTerm,
     setSelectedCategory
@@ -51,7 +53,6 @@ export default function Navbar() {
     { name: "Home", href: "#home", icon: Compass },
     { name: "Shop", href: "#shop", icon: Flame },
     { name: "Categories", href: "#categories", icon: Sparkles },
-    { name: "Custom Builder", href: "#custom-builder", icon: Sparkles },
     { name: "Reviews", href: "#reviews", icon: MessageSquare },
     { name: "Contact", href: "#contact", icon: Mail },
   ];
@@ -189,6 +190,16 @@ export default function Navbar() {
                 >
                   <User className="w-5 h-5" />
                 </button>
+
+                {/* Admin Dashboard Button (Discreet) */}
+                <button
+                  onClick={() => setAdminOpen(true)}
+                  className="p-2 rounded-full hover:bg-brand-forest/5 text-brand-forest/40 hover:text-brand-gold transition-colors duration-300"
+                  aria-label="Admin Dashboard"
+                  title="Artisan Admin Workspace"
+                >
+                  <Settings className="w-5 h-5" />
+                </button>
               </div>
 
               {/* Mobile Menu Button - Hamburger icon with cart item count badge */}
@@ -297,13 +308,28 @@ export default function Navbar() {
                     setIsMobileMenuOpen(false);
                     setAccountOpen(true);
                   }}
-                  className="w-full flex items-center justify-between py-3 text-[#1A1A1A] font-medium text-sm transition-colors duration-200 text-left"
+                  className="w-full flex items-center justify-between py-3 border-b border-brand-sand/30 text-[#1A1A1A] font-medium text-sm transition-colors duration-200 text-left"
                 >
                   <div className="flex items-center gap-3">
                     <User className="w-5 h-5 text-[#C9A76A]" />
                     <span>My Account & Orders</span>
                   </div>
                   <span className="text-[10px] text-[#C9A76A] uppercase tracking-wider font-bold font-sans">View</span>
+                </button>
+
+                {/* Mobile Admin Dashboard Trigger */}
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setAdminOpen(true);
+                  }}
+                  className="w-full flex items-center justify-between py-3 text-[#1A1A1A]/70 font-medium text-sm transition-colors duration-200 text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <Settings className="w-5 h-5 text-[#C9A76A]/70" />
+                    <span>Artisan Admin Workspace</span>
+                  </div>
+                  <span className="text-[10px] text-[#5A5A5A]/50 uppercase tracking-wider font-bold font-sans">Staff</span>
                 </button>
 
               </div>
