@@ -6,7 +6,7 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
 const supabase = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL
+const ADMIN_EMAIL = process.env.VITE_ADMIN_EMAIL
 
 async function sendEmail({ to, subject, text, html }) {
   // For Vercel, we recommend using a service like Resend, but we'll log it for now

@@ -519,7 +519,7 @@ The Resin Grove Automation`;
         });
       }
 
-      const adminEmailAddress = process.env.ADMIN_EMAIL || "orders@theresingrove.com";
+      const adminEmailAddress = process.env.VITE_ADMIN_EMAIL;
       const emailSubject = `[The Resin Grove] New Order & Custom Curation - ${newOrder.id}`;
 
       let itemsText = "";

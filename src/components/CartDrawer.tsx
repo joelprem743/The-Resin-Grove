@@ -16,8 +16,8 @@ import {
 } from "lucide-react";
 import { uploadCustomPhoto, isSupabaseConfigured } from "../lib/supabase";
 
-const ADMIN_EMAIL = "orders@theresingrove.com"; // Placeholder email that can be customized easily
-const STUDIO_UPI_ID = "yourname@okhdfcbank"; // <-- REPLACE WITH YOUR ACTUAL UPI ID
+const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || "joelpremtej@gmail.com";
+const STUDIO_UPI_ID = import.meta.env.VITE_STUDIO_UPI_ID || "6305472006@axl";
 
 export default function CartDrawer() {
   const { 
