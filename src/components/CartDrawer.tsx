@@ -564,13 +564,6 @@ export default function CartDrawer() {
                     </p>
                   </div>
 
-                  {/* Clean Studio Notification Message */}
-                  <div className="max-w-xs mx-auto p-4 bg-brand-forest/5 border border-brand-sand/50 rounded-[2px] text-left space-y-2">
-                    <p className="text-[10px] text-[#1A1A1A] leading-relaxed flex items-center gap-1.5">
-                      <Mail className="w-3.5 h-3.5 text-brand-gold flex-shrink-0" />
-                      <span>Your request was securely emailed to our studio team. We will review your customizations and contact you shortly!</span>
-                    </p>
-                  </div>
 
 <div className="space-y-3 max-w-xs mx-auto">
                     {/* UPI Payment Section with QR Code */}
