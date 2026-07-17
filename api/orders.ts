@@ -6,37 +6,57 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
 const supabase = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
 
-const ADMIN_EMAIL = process.env.VITE_ADMIN_EMAIL || process.env.ADMIN_EMAIL || "joelpremtej@gmail.com";
+const ADMIN_EMAIL = process.env.VITE_ADMIN_EMAIL || "joelpremtej@gmail.com";
 
-async function sendEmail({ to, subject, text, html }) {
-  try {
-    console.log("[SMTP] Initializing temporary Ethereal SMTP test account for Vercel...");
-    const testAccount = await nodemailer.createTestAccount();
-    
-    const transporter = nodemailer.createTransport({
-      host: "smtp.ethereal.email",
-      port: 587,
-      secure: false,
-      auth: {
-        user: testAccount.user,
-        pass: testAccount.pass,
-      },
+// SMTP Configuration
+async function sendEmail({ to, subject, html }) {
+  const host = process.env.SMTP_HOST;
+  const port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT) : 587;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  let transporter;
+
+  // 1. If real SMTP credentials are provided in Vercel Env Vars, use them
+  if (host && user && pass) {
+    console.log(`[SMTP] Initializing configured SMTP host: ${host}:${port}`);
+    transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: { user, pass },
     });
+  } else {
+    // 2. Fallback to Ethereal test account for development
+    console.log("[SMTP] No SMTP credentials provided. Using Ethereal test account...");
+    try {
+      const testAccount = await nodemailer.createTestAccount();
+      transporter = nodemailer.createTransport({
+        host: "smtp.ethereal.email",
+        port: 587,
+        secure: false,
+        auth: { user: testAccount.user, pass: testAccount.pass },
+      });
+    } catch (err) {
+      console.error("Failed to create Ethereal account:", err);
+      return { success: false, previewUrl: "" };
+    }
+  }
 
+  try {
     const info = await transporter.sendMail({
-      from: '"The Resin Grove Studio" <no-reply@theresingrove.com>',
+      from: `"The Resin Grove Studio" <${user || 'no-reply@theresingrove.com'}>`,
       to,
       subject,
-      text,
       html,
     });
 
-    const previewUrl = nodemailer.getTestMessageUrl(info);
+    const previewUrl = nodemailer.getTestMessageUrl(info) || "";
     console.log(`✉️ Email sent! Preview URL: ${previewUrl}`);
     return { success: true, previewUrl };
   } catch (err) {
-    console.error("Error sending email:", err);
-    return { success: false, error: err.message };
+    console.error("Error sending email via SMTP:", err);
+    return { success: false, previewUrl: "" };
   }
 }
 
@@ -91,24 +111,43 @@ export default async function handler(req, res) {
         await supabase.from("order_items").delete().eq("order_id", newOrder.id);
         await supabase.from("order_items").insert(itemsToInsert);
       }
-    } else {
-      console.log("[Supabase] Not configured. Order not saved to database.");
     }
 
-    // 2. Send Email Notification
-    const emailResult = await sendEmail({
+    // 2. Build Email HTML
+    let itemsHtml = "";
+    cart.forEach((item) => {
+      itemsHtml += `<div style="padding: 10px; border: 1px solid #eee; margin-bottom: 10px;">
+        <strong>${item.product.name} (x${item.quantity})</strong> - ₹${(item.product.price * item.quantity).toFixed(2)}<br>
+        ${item.selectedWood ? `Wood: ${item.selectedWood}<br>` : ""}
+        ${item.selectedResinColor ? `Resin: ${item.selectedResinColor}<br>` : ""}
+        ${item.customPhotoUrl ? `<br><img src="${item.customPhotoUrl}" style="width:100px; height:100px; object-fit:cover; border-radius:4px;" />` : ""}
+      </div>`;
+    });
+
+    const emailHtml = `
+      <h2>New Order: ${newOrder.id}</h2>
+      <p><strong>Customer:</strong> ${shippingDetails.name}</p>
+      <p><strong>Email:</strong> ${shippingDetails.email}</p>
+      <p><strong>Phone:</strong> ${shippingDetails.phone}</p>
+      <p><strong>Address:</strong> ${shippingDetails.address}, ${shippingDetails.zip}</p>
+      <hr>
+      <h3>Items:</h3>
+      ${itemsHtml}
+      <hr>
+      <h3>Total: ₹${newOrder.grandTotal.toFixed(2)}</h3>
+    `;
+
+    // 3. Send Email Notification via SMTP
+    await sendEmail({
       to: ADMIN_EMAIL,
       subject: `[The Resin Grove] New Order - ${newOrder.id}`,
-      text: `New order from ${shippingDetails.name}. Total: ₹${newOrder.grandTotal.toFixed(2)}`,
-      html: `<h3>New Order: ${newOrder.id}</h3><p>Customer: ${shippingDetails.name}</p><p>Total: ₹${newOrder.grandTotal.toFixed(2)}</p>`
+      html: emailHtml
     });
 
     res.status(201).json({
       success: true,
       message: "Order placed successfully.",
       order: newOrder,
-      emailSent: emailResult.success,
-      previewUrl: emailResult.previewUrl || "",
     });
   } catch (err) {
     console.error("Error placing order:", err);
