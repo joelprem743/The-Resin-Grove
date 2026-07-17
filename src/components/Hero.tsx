@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "motion/react";
 import { Sparkles, ArrowRight, Compass, ShieldCheck } from "lucide-react";
+import heroArt from "../assets/images/resin_hero_art_1783070133084.jpg";
 
 export default function Hero() {
   return (
@@ -152,7 +153,7 @@ export default function Hero() {
               <div className="relative w-full h-full rounded-t-[232px] rounded-b-none overflow-hidden group">
                 {/* Image */}
                 <img
-                  src="/src/assets/images/resin_hero_art_1783070133084.jpg"
+                  src={heroArt}
                   alt="Premium Handcrafted Ocean Wave Resin River Art Board"
                   className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                   referrerPolicy="no-referrer"
