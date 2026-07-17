@@ -519,7 +519,7 @@ The Resin Grove Automation`;
         });
       }
 
-      const adminEmailAddress = process.env.VITE_ADMIN_EMAIL;
+      const adminEmailAddress = process.env.VITE_ADMIN_EMAIL || process.env.ADMIN_EMAIL || "joelpremtej@gmail.com";
       const emailSubject = `[The Resin Grove] New Order & Custom Curation - ${newOrder.id}`;
 
       let itemsText = "";

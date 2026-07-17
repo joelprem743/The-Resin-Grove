@@ -6,13 +6,38 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
 const supabase = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
 
-const ADMIN_EMAIL = process.env.VITE_ADMIN_EMAIL
+const ADMIN_EMAIL = process.env.VITE_ADMIN_EMAIL || process.env.ADMIN_EMAIL || "joelpremtej@gmail.com";
 
 async function sendEmail({ to, subject, text, html }) {
-  // For Vercel, we recommend using a service like Resend, but we'll log it for now
-  // if you want emails to work on Vercel, you'll need to add SMTP env vars or use Resend.
-  console.log(`[Email Notification] To: ${to}\nSubject: ${subject}\n`);
-  return { success: true };
+  try {
+    console.log("[SMTP] Initializing temporary Ethereal SMTP test account for Vercel...");
+    const testAccount = await nodemailer.createTestAccount();
+    
+    const transporter = nodemailer.createTransport({
+      host: "smtp.ethereal.email",
+      port: 587,
+      secure: false,
+      auth: {
+        user: testAccount.user,
+        pass: testAccount.pass,
+      },
+    });
+
+    const info = await transporter.sendMail({
+      from: '"The Resin Grove Studio" <no-reply@theresingrove.com>',
+      to,
+      subject,
+      text,
+      html,
+    });
+
+    const previewUrl = nodemailer.getTestMessageUrl(info);
+    console.log(`✉️ Email sent! Preview URL: ${previewUrl}`);
+    return { success: true, previewUrl };
+  } catch (err) {
+    console.error("Error sending email:", err);
+    return { success: false, error: err.message };
+  }
 }
 
 export default async function handler(req, res) {
@@ -37,7 +62,7 @@ export default async function handler(req, res) {
       status: "Curation Requested",
     };
 
-    // Save to Supabase
+    // 1. Save to Supabase
     if (supabase) {
       const { error } = await supabase.from("orders").upsert({
         id: newOrder.id,
@@ -70,8 +95,8 @@ export default async function handler(req, res) {
       console.log("[Supabase] Not configured. Order not saved to database.");
     }
 
-    // Send Email Notification
-    await sendEmail({
+    // 2. Send Email Notification
+    const emailResult = await sendEmail({
       to: ADMIN_EMAIL,
       subject: `[The Resin Grove] New Order - ${newOrder.id}`,
       text: `New order from ${shippingDetails.name}. Total: ₹${newOrder.grandTotal.toFixed(2)}`,
@@ -82,6 +107,8 @@ export default async function handler(req, res) {
       success: true,
       message: "Order placed successfully.",
       order: newOrder,
+      emailSent: emailResult.success,
+      previewUrl: emailResult.previewUrl || "",
     });
   } catch (err) {
     console.error("Error placing order:", err);
