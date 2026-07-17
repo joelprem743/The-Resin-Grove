@@ -11,7 +11,7 @@ import {
   Flame,
   Mail,
   AlertTriangle,
-  Paperclip,
+  UploadCloud,
   Loader2
 } from "lucide-react";
 import { uploadCustomPhoto, isSupabaseConfigured } from "../lib/supabase";
@@ -327,14 +327,32 @@ export default function CartDrawer() {
                               </div>
 
                               {/* Custom Photo Upload UI */}
-                              <div className="flex items-center gap-3 mt-2">
-                                <label className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold text-brand-gold hover:text-brand-forest transition-colors">
+                              <div className="mt-3 pt-3 border-t border-dashed border-brand-sand/40">
+                                <label className={`flex flex-col items-center justify-center cursor-pointer rounded-[4px] border-2 border-dashed transition-all p-4 ${
+                                  item.customPhotoUrl 
+                                    ? 'border-green-400 bg-green-50/50' 
+                                    : 'border-brand-gold/40 bg-[#FAF8F5] hover:bg-brand-gold/10 hover:border-brand-gold'
+                                }`}>
                                   {uploadingPhotoId === `${item.product.id}-${itemConfigId}` ? (
-                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    <div className="flex flex-col items-center">
+                                      <Loader2 className="w-6 h-6 animate-spin text-brand-gold mb-1" />
+                                      <span className="text-[10px] text-[#5A5A5A]">Uploading...</span>
+                                    </div>
+                                  ) : item.customPhotoUrl ? (
+                                    <div className="flex items-center gap-3">
+                                      <img src={item.customPhotoUrl} alt="Custom upload" className="w-12 h-12 object-cover rounded-[2px] border border-brand-sand" />
+                                      <div className="flex flex-col">
+                                        <span className="text-[10px] text-green-700 font-bold uppercase tracking-wider">Photo Attached!</span>
+                                        <span className="text-[9px] text-[#5A5A5A] underline">Click to change photo</span>
+                                      </div>
+                                    </div>
                                   ) : (
-                                    <Paperclip className="w-3.5 h-3.5" />
+                                    <div className="flex flex-col items-center text-center">
+                                      <UploadCloud className="w-6 h-6 text-brand-gold mb-1" />
+                                      <span className="text-[10px] text-brand-forest font-bold uppercase tracking-wider">Upload Customizable Photo Here</span>
+                                      <span className="text-[9px] text-[#5A5A5A] mt-0.5">PNG, JPG up to 5MB</span>
+                                    </div>
                                   )}
-                                  <span>{item.customPhotoUrl ? "Change Photo" : "Upload Photo"}</span>
                                   <input
                                     type="file"
                                     accept="image/*"
@@ -345,11 +363,6 @@ export default function CartDrawer() {
                                     }}
                                   />
                                 </label>
-                                {item.customPhotoUrl && (
-                                  <div className="w-8 h-8 rounded-[2px] overflow-hidden border border-brand-sand">
-                                    <img src={item.customPhotoUrl} alt="Custom upload" className="w-full h-full object-cover" />
-                                  </div>
-                                )}
                               </div>
 
                               {/* Item Quantity Trigger and Remove buttons */}
