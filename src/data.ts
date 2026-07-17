@@ -435,7 +435,7 @@ features: [
     ]
   },
   {
-    id: "prod-12",
+    id: "prod-13",
     name: "Floral Resin Wall Clock",
     category: "Resin Wall Clocks",
     price: 180.00,
