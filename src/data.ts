@@ -25,8 +25,8 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: "cat-6",
-    name: "Jewelry",
-    slug: "jewelry",
+    name: "Resin Pendants",
+    slug: "Resin Pendants",
     image: "/products/Pressed Flower Resin Pendant.webp",
     description: "Delicate silver and gold bezels encasing preserved wildflowers and crystals."
   },
