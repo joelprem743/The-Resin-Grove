@@ -10,8 +10,11 @@ import {
   Truck,
   Flame,
   Mail,
-  AlertTriangle
+  AlertTriangle,
+  Paperclip,
+  Loader2
 } from "lucide-react";
+import { uploadCustomPhoto, isSupabaseConfigured } from "../lib/supabase";
 
 const ADMIN_EMAIL = "orders@theresingrove.com"; // Placeholder email that can be customized easily
 
@@ -25,7 +28,8 @@ export default function CartDrawer() {
     clearCart,
     user,
     setAccountOpen,
-    showToast
+    showToast,
+    attachCustomPhoto
   } = useShop();
 
   const [checkoutStep, setCheckoutStep] = useState<"idle" | "billing" | "processing" | "success" | "error">("idle");
@@ -40,6 +44,7 @@ export default function CartDrawer() {
   const [createdOrderId, setCreatedOrderId] = useState<string>("");
   const [createdOrderPreviewUrl, setCreatedOrderPreviewUrl] = useState<string>("");
   const [orderTotal, setOrderTotal] = useState<number>(0);
+  const [uploadingPhotoId, setUploadingPhotoId] = useState<string | null>(null);
 
   // Prefill shipping details automatically if the user is logged in
   useEffect(() => {
@@ -98,6 +103,24 @@ export default function CartDrawer() {
       return;
     }
     setCheckoutStep("billing");
+  };
+
+  const handlePhotoUpload = async (productId: string, configId: string, file: File) => {
+    if (!user || !isSupabaseConfigured) {
+      showToast("Login Required", "Please log in to upload custom photos.");
+      return;
+    }
+    
+    setUploadingPhotoId(`${productId}-${configId}`);
+    const url = await uploadCustomPhoto(user.id, file);
+    setUploadingPhotoId(null);
+
+    if (url) {
+      attachCustomPhoto(productId, configId, url);
+      showToast("Photo Uploaded", "Your custom image is securely attached!");
+    } else {
+      showToast("Upload Failed", "Could not upload photo. Please try again.");
+    }
   };
 
   const handlePay = (e: React.FormEvent) => {
@@ -300,6 +323,32 @@ export default function CartDrawer() {
                                   <span className="text-[10px] text-[#5A5A5A] line-through font-sans">
                                     ₹{item.product.originalPrice.toFixed(2)}
                                   </span>
+                                )}
+                              </div>
+
+                              {/* Custom Photo Upload UI */}
+                              <div className="flex items-center gap-3 mt-2">
+                                <label className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold text-brand-gold hover:text-brand-forest transition-colors">
+                                  {uploadingPhotoId === `${item.product.id}-${itemConfigId}` ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <Paperclip className="w-3.5 h-3.5" />
+                                  )}
+                                  <span>{item.customPhotoUrl ? "Change Photo" : "Upload Photo"}</span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) handlePhotoUpload(item.product.id, itemConfigId, file);
+                                    }}
+                                  />
+                                </label>
+                                {item.customPhotoUrl && (
+                                  <div className="w-8 h-8 rounded-[2px] overflow-hidden border border-brand-sand">
+                                    <img src={item.customPhotoUrl} alt="Custom upload" className="w-full h-full object-cover" />
+                                  </div>
                                 )}
                               </div>
 

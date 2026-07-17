@@ -316,3 +316,34 @@ export async function saveReviewToSupabase(review: any): Promise<boolean> {
 //     return null;
 //   }
 // }
+
+// ==========================================
+// CUSTOM PHOTO UPLOAD HELPER
+// ==========================================
+
+export async function uploadCustomPhoto(userId: string, file: File): Promise<string | null> {
+  if (!supabase) return null;
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${userId}/${Date.now()}.${fileExt}`;
+    
+    const { error } = await supabase.storage
+      .from('custom-photos')
+      .upload(fileName, file);
+
+    if (error) {
+      console.error("Error uploading photo to Supabase:", error);
+      return null;
+    }
+
+    // Get the public URL
+    const { data } = supabase.storage
+      .from('custom-photos')
+      .getPublicUrl(fileName);
+
+    return data.publicUrl;
+  } catch (err) {
+    console.error("Supabase photo upload exception:", err);
+    return null;
+  }
+}

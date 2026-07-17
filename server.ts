@@ -1,3 +1,4 @@
+// server.ts
 import express from "express";
 import path from "path";
 import fs from "fs";
@@ -215,6 +216,7 @@ async function saveOrder(order: any) {
         selected_resin_color: item.selectedResinColor || null,
         selected_deco: item.selectedDeco || [],
         personalization_text: item.personalizationText || null,
+        custom_image_url: item.customPhotoUrl || null, // Saves image URL to DB
       }));
 
       await supabase.from("order_items").delete().eq("order_id", order.id);
@@ -359,8 +361,6 @@ async function startServer() {
       const saveResult = await saveInquiry(newInquiry);
 
       if (!saveResult.success) {
-        // Supabase is the source of truth — if the write failed, tell the caller honestly
-        // instead of pretending it succeeded.
         return res.status(502).json({
           error: "Failed to save inquiry to the database.",
           details: saveResult.error,
@@ -413,7 +413,7 @@ Estimated Delivery Timeline: ${newInquiry.deliveryDate}
 Description / Vision:
 "${description}"
 
-${configText}
+ ${configText}
 
 Please contact the customer back to discuss their bespoke piece!
 
@@ -532,6 +532,8 @@ The Resin Grove Automation`;
             <p style="margin: 0; font-size: 11px; color: #C9A76A; font-weight: bold; text-transform: uppercase;">${item.product.category}</p>
             <p style="margin: 4px 0 0 0; font-family: monospace; font-size: 12px; font-weight: bold; color: #1A1A1A;">Price: ₹${(item.product.price * item.quantity).toFixed(2)}</p>
         `;
+        
+        // Add custom configurations if they exist
         if (item.selectedWood || item.selectedResinColor || item.selectedDeco || item.personalizationText) {
           itemsText += `   Customizations:\n`;
           itemsHtml += `<div style="margin-top: 8px; padding: 8px; background: #FAF8F5; border: 1px solid #E6D7B8; border-radius: 2px; font-size: 11px; color: #5A5A5A;">`;
@@ -553,6 +555,21 @@ The Resin Grove Automation`;
           }
           itemsHtml += `</div>`;
         }
+
+        // >>> NEW: Add the Custom Photo to the email if it exists <<<
+        if (item.customPhotoUrl) {
+          itemsText += `     • Custom Photo Uploaded: ${item.customPhotoUrl}\n`;
+          itemsHtml += `
+            <div style="margin-top: 8px; padding: 8px; background: #FAF8F5; border: 1px solid #E6D7B8; border-radius: 2px; font-size: 11px; color: #5A5A5A;">
+              <div style="margin-bottom: 4px;">• <strong>Customer Uploaded Photo:</strong></div>
+              <a href="${item.customPhotoUrl}" target="_blank" style="display: inline-block;">
+                <img src="${item.customPhotoUrl}" alt="Custom Upload" style="width: 120px; height: 120px; object-fit: cover; border-radius: 4px; border: 1px solid #D9CBB3;" />
+              </a>
+              <div style="margin-top: 4px; font-size: 9px; color: #888;"><a href="${item.customPhotoUrl}" target="_blank" style="color: #888;">Click image to view full size</a></div>
+            </div>
+          `;
+        }
+
         itemsText += `\n`;
         itemsHtml += `</div>`;
       });
@@ -575,7 +592,7 @@ Total Order Value: ₹${newOrder.grandTotal.toFixed(2)}
 
 ITEMS ORDERED:
 --------------
-${itemsText}
+ ${itemsText}
 Please contact the customer back to coordinate payment (UPI/Bank Transfer/Invoice) and confirm curation.
 
 Best regards,

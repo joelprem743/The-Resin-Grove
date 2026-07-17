@@ -21,7 +21,8 @@ import {
   ChevronDown,
   Lock,
   ChevronRight,
-  Info
+  Info,
+  Paperclip
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -574,12 +575,17 @@ export default function AdminDashboard() {
                               <strong className="text-[#1A1A1A] font-bold">Items Count: {ord.cart.length}</strong>
                               <ul className="list-disc pl-4 space-y-1 mt-1 font-medium">
                                 {ord.cart.map((item: any, i: number) => (
-                                  <li key={i}>
+                                  <li key={i} className="flex items-center gap-2">
                                     {item.product.name} (x{item.quantity}) -{" "}
                                     {item.selectedWood ? (
                                       <span className="text-[#C9A76A]">Custom Crafted</span>
                                     ) : (
                                       <span className="text-gray-400 text-[10px]">Standard</span>
+                                    )}
+                                    {item.customPhotoUrl && (
+                                      <span className="inline-flex items-center gap-1 text-blue-500 text-[10px] font-bold ml-2">
+                                        <Paperclip className="w-3 h-3" /> Photo Attached
+                                      </span>
                                     )}
                                   </li>
                                 ))}
@@ -739,6 +745,16 @@ export default function AdminDashboard() {
                               {item.personalizationText && (
                                 <div>• Monogram: <span className="font-serif italic text-[#C9A76A]">"{item.personalizationText}"</span></div>
                               )}
+                            </div>
+                          )}
+                          
+                          {/* >>> NEW: Display Custom Uploaded Photo <<< */}
+                          {item.customPhotoUrl && (
+                            <div className="mt-2 pt-2 border-t border-brand-sand/20">
+                              <div className="text-[9px] uppercase font-bold text-[#5A5A5A] tracking-wider mb-1.5">Customer Uploaded Photo:</div>
+                              <a href={item.customPhotoUrl} target="_blank" rel="noopener noreferrer" className="inline-block">
+                                <img src={item.customPhotoUrl} alt="Custom Upload" className="w-24 h-24 object-cover rounded-[2px] border border-brand-sand" />
+                              </a>
                             </div>
                           )}
                         </div>

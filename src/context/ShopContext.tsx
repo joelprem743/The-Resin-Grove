@@ -37,6 +37,7 @@ interface ShopContextType {
   ) => void;
   removeFromCart: (productId: string, configId: string) => void;
   updateQuantity: (productId: string, configId: string, quantity: number) => void;
+  attachCustomPhoto: (productId: string, configId: string, photoUrl: string) => void;
   toggleWishlist: (product: Product) => void;
   isInWishlist: (productId: string) => boolean;
   clearCart: () => void;
@@ -409,6 +410,23 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   };
 
+  const attachCustomPhoto = (productId: string, configId: string, photoUrl: string) => {
+    setCart((prevCart) =>
+      prevCart.map((item) => {
+        const itemConfigId = getConfigKey(
+          item.selectedWood,
+          item.selectedResinColor,
+          item.selectedDeco,
+          item.personalizationText
+        );
+        if (item.product.id === productId && itemConfigId === configId) {
+          return { ...item, customPhotoUrl: photoUrl };
+        }
+        return item;
+      })
+    );
+  };
+
   const toggleWishlist = (product: Product) => {
     setWishlist((prev) => {
       const exists = prev.some((item) => item.id === product.id);
@@ -468,6 +486,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addToCart,
         removeFromCart,
         updateQuantity,
+        attachCustomPhoto,
         toggleWishlist,
         isInWishlist,
         clearCart,
