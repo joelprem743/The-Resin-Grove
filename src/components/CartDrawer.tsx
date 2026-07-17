@@ -564,23 +564,13 @@ export default function CartDrawer() {
                     </p>
                   </div>
 
-                  {/* Temporary Test Email Preview Link */}
-                  {createdOrderPreviewUrl && (
-                    <div className="max-w-xs mx-auto p-4 bg-brand-forest/5 border border-brand-sand/50 rounded-[2px] text-left space-y-2">
-                      <p className="text-[10px] text-[#1A1A1A] leading-relaxed">
-                        ✨ <strong>Sandbox SMTP Notice:</strong> Because SMTP credentials aren't configured yet, a real email was automatically dispatched to an Ethereal inbox.
-                      </p>
-                      <a
-                        href={createdOrderPreviewUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex w-full py-2 bg-brand-forest text-white hover:bg-[#20362B] rounded-[2px] text-[11px] font-bold uppercase tracking-[0.5px] items-center justify-center gap-1.5 transition-colors"
-                      >
-                        <Mail className="w-3.5 h-3.5" />
-                        <span>View Automated Email</span>
-                      </a>
-                    </div>
-                  )}
+                  {/* Clean Studio Notification Message */}
+                  <div className="max-w-xs mx-auto p-4 bg-brand-forest/5 border border-brand-sand/50 rounded-[2px] text-left space-y-2">
+                    <p className="text-[10px] text-[#1A1A1A] leading-relaxed flex items-center gap-1.5">
+                      <Mail className="w-3.5 h-3.5 text-brand-gold flex-shrink-0" />
+                      <span>Your request was securely emailed to our studio team. We will review your customizations and contact you shortly!</span>
+                    </p>
+                  </div>
 
 <div className="space-y-3 max-w-xs mx-auto">
                     {/* UPI Payment Section with QR Code */}
