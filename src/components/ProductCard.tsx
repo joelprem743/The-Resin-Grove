@@ -63,6 +63,11 @@ export default function ProductCard({ product }: ProductCardProps): React.JSX.El
                 <span>Best Seller</span>
               </span>
             )}
+            {product.originalPrice && (
+              <span className="px-2 py-1 rounded-[2px] bg-red-500 text-white text-[9px] font-bold tracking-[1.5px] uppercase shadow-xs">
+                Sale
+              </span>
+            )}
             {!product.inStock && (
               <span className="px-2 py-1 rounded-[2px] bg-brand-forest/90 text-brand-ivory text-[9px] font-bold tracking-[1.5px] uppercase">
                 Sold Out
@@ -144,9 +149,16 @@ export default function ProductCard({ product }: ProductCardProps): React.JSX.El
 
         {/* Price and Cart Quick button */}
         <div className="flex items-center justify-between pt-3 mt-3 border-t border-brand-sand/35">
-          <span className="text-sm sm:text-base font-medium text-brand-forest">
-            ₹{product.price.toFixed(2)}
-          </span>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-sm sm:text-base font-bold text-brand-forest">
+              ₹{product.price.toFixed(2)}
+            </span>
+            {product.originalPrice && (
+              <span className="text-[11px] text-[#5A5A5A] line-through font-medium">
+                ₹{product.originalPrice.toFixed(2)}
+              </span>
+            )}
+          </div>
           
           <button
             onClick={handleAddToCart}

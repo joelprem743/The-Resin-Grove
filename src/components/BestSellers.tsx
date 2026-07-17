@@ -59,6 +59,13 @@ export default function BestSellers() {
                         <Sparkles className="w-3.5 h-3.5" />
                         <span>Best Seller No. {index + 1}</span>
                       </div>
+                      
+                      {/* Discount Badge */}
+                      {product.originalPrice && (
+                        <div className="absolute top-3 right-3 bg-red-500 text-white text-[9px] font-bold uppercase px-2 py-1 rounded-[2px] shadow-xs z-10">
+                          Save ₹{(product.originalPrice - product.price).toFixed(2)}
+                        </div>
+                      )}
                     </div>
 
                     {/* Product Detailed Content */}
@@ -92,8 +99,13 @@ export default function BestSellers() {
                       </div>
 
                       {/* Pricing tag */}
-                      <div className="text-base font-normal text-brand-forest font-serif">
-                        ₹{product.price.toFixed(2)}
+                      <div className="flex items-baseline gap-2 text-base font-normal text-brand-forest font-serif">
+                        <span className="text-brand-gold font-bold">₹{product.price.toFixed(2)}</span>
+                        {product.originalPrice && (
+                          <span className="text-xs text-[#5A5A5A] line-through font-sans">
+                            ₹{product.originalPrice.toFixed(2)}
+                          </span>
+                        )}
                       </div>
 
                       {/* Deep Description */}

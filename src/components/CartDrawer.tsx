@@ -68,6 +68,16 @@ export default function CartDrawer() {
     return cart.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
   }, [cart]);
 
+  // Compute Total Savings
+  const totalSavings = useMemo(() => {
+    return cart.reduce((acc, item) => {
+      if (item.product.originalPrice) {
+        return acc + (item.product.originalPrice - item.product.price) * item.quantity;
+      }
+      return acc;
+    }, 0);
+  }, [cart]);
+
   // Compute Shipping
   const shippingFee = useMemo(() => {
     if (subtotal === 0) return 0;
@@ -284,7 +294,14 @@ export default function CartDrawer() {
                               )}
 
                               {/* Price per item */}
-                              <div className="text-xs font-bold text-[#1A1A1A]/80 font-mono mt-1">₹{item.product.price.toFixed(2)}</div>
+                              <div className="flex items-center gap-2 text-xs font-bold text-[#1A1A1A]/80 font-mono mt-1">
+                                <span>₹{item.product.price.toFixed(2)}</span>
+                                {item.product.originalPrice && (
+                                  <span className="text-[10px] text-[#5A5A5A] line-through font-sans">
+                                    ₹{item.product.originalPrice.toFixed(2)}
+                                  </span>
+                                )}
+                              </div>
 
                               {/* Item Quantity Trigger and Remove buttons */}
                               <div className="flex items-center justify-between pt-2 mt-2 border-t border-brand-sand/20">
@@ -548,6 +565,14 @@ export default function CartDrawer() {
                     <span>Subtotal:</span>
                     <span className="font-mono">₹{subtotal.toFixed(2)}</span>
                   </div>
+                  
+                  {totalSavings > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Studio Savings:</span>
+                      <span className="font-mono">-₹{totalSavings.toFixed(2)}</span>
+                    </div>
+                  )}
+
                   <div className="flex justify-between">
                     <span>Studio Delivery:</span>
                     <span className="font-mono text-[#5A5A5A]">

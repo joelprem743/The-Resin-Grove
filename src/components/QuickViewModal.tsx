@@ -72,6 +72,11 @@ export default function QuickViewModal() {
                     <span>Best Seller</span>
                   </span>
                 )}
+                {product.originalPrice && (
+                  <span className="absolute top-3 right-3 bg-red-500 text-white text-[9px] font-bold uppercase px-2 py-1 rounded-[2px] shadow-xs z-10">
+                    Sale
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -106,9 +111,21 @@ export default function QuickViewModal() {
               </div>
             </div>
 
-            {/* Price */}
-            <div className="text-2xl font-serif font-normal text-brand-forest">
-              ₹{product.price.toFixed(2)}
+            {/* Price Tag */}
+            <div className="flex items-baseline gap-3 mb-6">
+              <span className="font-serif text-3xl font-bold text-brand-forest">
+                ₹{product.price.toFixed(2)}
+              </span>
+              {product.originalPrice && (
+                <span className="font-sans text-base text-[#5A5A5A] line-through">
+                  ₹{product.originalPrice.toFixed(2)}
+                </span>
+              )}
+              {product.originalPrice && (
+                <span className="bg-red-50 text-red-600 text-[10px] font-bold uppercase px-2 py-1 rounded-[2px] border border-red-100">
+                  Save ₹{(product.originalPrice - product.price).toFixed(2)}
+                </span>
+              )}
             </div>
 
             {/* Description */}
