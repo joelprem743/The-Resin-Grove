@@ -75,8 +75,8 @@ export default function ProductCard({ product }: ProductCardProps): React.JSX.El
             )}
           </div>
 
-          {/* Action overlay buttons */}
-          <div className="absolute inset-0 bg-brand-forest/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3">
+          {/* Action overlay buttons (Desktop Hover) */}
+          <div className="absolute inset-0 bg-brand-forest/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 items-center justify-center gap-3 hidden md:flex">
             <button
               onClick={handleQuickView}
               className="p-3 bg-white hover:bg-brand-ivory text-brand-forest hover:text-brand-gold rounded-full shadow-xs hover:scale-105 transition-all duration-200"
@@ -126,7 +126,7 @@ export default function ProductCard({ product }: ProductCardProps): React.JSX.El
           {/* Title */}
           <h3 
             onClick={handleQuickView}
-            className="font-serif text-sm sm:text-base font-normal text-brand-forest hover:text-brand-gold transition-colors duration-200 cursor-pointer line-clamp-1"
+            className="font-serif text-sm sm:text-base font-normal text-brand-forest hover:text-brand-gold transition-colors duration-200 cursor-pointer line-clamp-2 min-h-[2.5rem]"
           >
             {product.name}
           </h3>
@@ -148,7 +148,8 @@ export default function ProductCard({ product }: ProductCardProps): React.JSX.El
         </div>
 
         {/* Price and Cart Quick button */}
-        <div className="flex items-center justify-between pt-3 mt-3 border-t border-brand-sand/35">
+        {/* Changed to flex-col on mobile so they stack vertically and don't truncate */}
+        <div className="flex flex-col gap-3 pt-3 mt-3 border-t border-brand-sand/35 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-baseline gap-1.5">
             <span className="text-sm sm:text-base font-bold text-brand-forest">
               ₹{product.price.toFixed(2)}
@@ -163,9 +164,10 @@ export default function ProductCard({ product }: ProductCardProps): React.JSX.El
           <button
             onClick={handleAddToCart}
             disabled={!product.inStock}
-            className="text-[10px] uppercase tracking-[1px] font-bold text-brand-gold hover:text-brand-forest flex items-center gap-1 transition-colors duration-200"
+            className="w-full sm:w-auto px-3 py-2 bg-brand-forest text-brand-ivory rounded-[2px] text-[10px] uppercase tracking-[1px] font-bold hover:bg-brand-forest/90 flex items-center justify-center gap-1.5 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <span className="hover:underline">Add to Bag</span>
+            <ShoppingBag className="w-3 h-3" />
+            <span>Add to Bag</span>
           </button>
         </div>
       </div>

@@ -17,6 +17,7 @@ import {
 import { uploadCustomPhoto, isSupabaseConfigured } from "../lib/supabase";
 
 const ADMIN_EMAIL = "orders@theresingrove.com"; // Placeholder email that can be customized easily
+const STUDIO_UPI_ID = "yourname@okhdfcbank"; // <-- REPLACE WITH YOUR ACTUAL UPI ID
 
 export default function CartDrawer() {
   const { 
@@ -581,7 +582,48 @@ export default function CartDrawer() {
                     </div>
                   )}
 
-                  <div className="space-y-2 max-w-xs mx-auto">
+<div className="space-y-3 max-w-xs mx-auto">
+                    {/* UPI Payment Section with QR Code */}
+                    <div className="bg-[#FAF8F5] p-4 rounded-[4px] border border-brand-sand/40 space-y-3 text-center">
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-[#5A5A5A] block">Pay ₹{(orderTotal || grandTotal).toFixed(2)} via UPI</span>
+                      
+                      {/* QR Code for Desktop scanning */}
+                      <div className="flex justify-center">
+                        <img 
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`upi://pay?pa=${STUDIO_UPI_ID}&pn=TheResinGrove&am=${(orderTotal || grandTotal).toFixed(2)}&cu=INR&tn=Order ${createdOrderId || ""}`)}`} 
+                          alt="UPI QR Code" 
+                          className="w-32 h-32 border border-white rounded-[2px] shadow-sm bg-white p-1"
+                        />
+                      </div>
+                      
+                      <p className="text-[9px] text-[#5A5A5A] leading-relaxed">
+                        Scan this QR code with any UPI app (GPay, PhonePe, Paytm) to pay instantly.
+                      </p>
+
+                      {/* Mobile Deep Link Button (Only shows on mobile devices) */}
+                      <a
+                        href={`upi://pay?pa=${STUDIO_UPI_ID}&pn=TheResinGrove&am=${(orderTotal || grandTotal).toFixed(2)}&cu=INR&tn=Order ${createdOrderId || ""}`}
+                        className="block w-full py-2.5 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white rounded-[2px] text-[10px] font-bold uppercase tracking-[1px] transition-colors md:hidden"
+                      >
+                        Open UPI App
+                      </a>
+
+                      {/* Manual UPI ID Copy */}
+                      <div className="pt-2 border-t border-brand-sand/30">
+                        <span className="text-[10px] text-[#5A5A5A] block mb-1">Or copy UPI ID:</span>
+                        <button 
+                          onClick={() => {
+                            navigator.clipboard.writeText(STUDIO_UPI_ID);
+                            showToast("UPI ID Copied", "You can paste it in your UPI app now!");
+                          }}
+                          className="font-bold text-brand-gold underline text-xs"
+                        >
+                          {STUDIO_UPI_ID}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Copy Receipt */}
                     <button
                       onClick={() => {
                         const receiptText = `THE RESIN GROVE ORDER RECEIPT\nOrder ID: ${createdOrderId || "TRG-XXXXXX"}\nCustomer: ${shippingDetails.name}\nTotal: ₹${(orderTotal || grandTotal).toFixed(2)}`;

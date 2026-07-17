@@ -74,7 +74,7 @@ export default function BestSellers() {
                         <span className="text-[9px] font-bold text-brand-gold uppercase tracking-[1.5px] block">
                           {product.category}
                         </span>
-                        <h3 className="font-serif text-base sm:text-lg font-normal text-brand-forest line-clamp-1">
+                        <h3 className="font-serif text-base sm:text-lg font-normal text-brand-forest line-clamp-2">
                           {product.name}
                         </h3>
                         
@@ -133,18 +133,18 @@ export default function BestSellers() {
                         </div>
                       </div>
 
-                      {/* Action Buttons */}
-                      <div className="flex items-center gap-2.5 pt-1">
+                      {/* Action Buttons - Stacks vertically on mobile to prevent truncation */}
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2.5 pt-1">
                         <button
                           onClick={() => addToCart(product, 1)}
-                          className="flex-1 px-3 py-2.5 bg-brand-gold hover:bg-brand-gold/90 text-brand-forest rounded-[2px] font-bold text-[10px] uppercase tracking-[1px] transition-all duration-300 flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap"
+                          className="w-full px-3 py-2.5 bg-brand-gold hover:bg-brand-gold/90 text-brand-forest rounded-[2px] font-bold text-[10px] uppercase tracking-[1px] transition-all duration-300 flex items-center justify-center gap-1 cursor-pointer"
                         >
                           <ShoppingBag className="w-3 h-3" />
                           <span>Add to Bag</span>
                         </button>
                         <button
                           onClick={() => setQuickViewProduct(product)}
-                          className="px-3 py-2.5 bg-transparent hover:bg-brand-forest/5 border border-brand-gold text-brand-gold rounded-[2px] font-bold text-[10px] uppercase tracking-[1px] transition-all duration-300 cursor-pointer text-center whitespace-nowrap"
+                          className="w-full px-3 py-2.5 bg-transparent hover:bg-brand-forest/5 border border-brand-gold text-brand-gold rounded-[2px] font-bold text-[10px] uppercase tracking-[1px] transition-all duration-300 cursor-pointer text-center"
                         >
                           <span>Details</span>
                         </button>

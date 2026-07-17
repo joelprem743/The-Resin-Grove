@@ -96,7 +96,7 @@ export default function QuickViewModal() {
               </h3>
 
               {/* Rating and Reviews */}
-              <div className="flex items-center gap-2 pt-1">
+              <div className="flex flex-wrap items-center gap-2 pt-1">
                 <div className="flex items-center text-brand-gold">
                   {[...Array(5)].map((_, i) => (
                     <Star 
@@ -112,7 +112,7 @@ export default function QuickViewModal() {
             </div>
 
             {/* Price Tag */}
-            <div className="flex items-baseline gap-3 mb-6">
+            <div className="flex flex-wrap items-baseline gap-3 py-2 border-b border-brand-sand/30">
               <span className="font-serif text-3xl font-bold text-brand-forest">
                 ₹{product.price.toFixed(2)}
               </span>
@@ -134,7 +134,7 @@ export default function QuickViewModal() {
             </p>
 
             {/* Specifications Details */}
-            <div className="grid grid-cols-2 gap-4 py-4 border-t border-b border-brand-sand/40 text-xs text-brand-forest">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4 border-t border-b border-brand-sand/40 text-xs text-brand-forest">
               <div>
                 <span className="font-bold uppercase text-[9px] text-brand-gold tracking-[1.5px] block mb-1">Dimensions</span>
                 <span className="font-medium text-[#5A5A5A]">{product.dimensions}</span>
@@ -146,7 +146,7 @@ export default function QuickViewModal() {
             </div>
 
             {/* Micro value badges */}
-            <div className="flex gap-4">
+            <div className="flex flex-wrap gap-4">
               <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#5A5A5A] uppercase tracking-[1px]">
                 <Shield className="w-4 h-4 text-brand-gold" />
                 <span>Anti-Yellowing Glaze</span>
@@ -157,34 +157,47 @@ export default function QuickViewModal() {
               </div>
             </div>
 
-            {/* Custom Quantity selector and Cart buttons */}
-            <div className="flex items-center gap-4 pt-4">
-              {/* Quantity control */}
-              <div className="flex items-center border border-brand-sand rounded-[2px] bg-brand-ivory overflow-hidden h-12">
+            {/* Action Buttons Layout */}
+            <div className="space-y-3 pt-4">
+              {/* Row 1: Quantity and Wishlist */}
+              <div className="flex flex-row items-center gap-3">
+                {/* Quantity control */}
+                <div className="flex items-center justify-center border border-brand-sand rounded-[2px] bg-brand-ivory overflow-hidden h-12 w-24 shrink-0">
+                  <button
+                    onClick={handleDecrement}
+                    disabled={!product.inStock}
+                    className="w-10 h-full hover:bg-brand-sand/30 text-brand-forest font-semibold text-sm transition-colors duration-200 cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    –
+                  </button>
+                  <span className="w-10 text-center font-mono text-sm font-bold text-brand-forest">
+                    {quantity}
+                  </span>
+                  <button
+                    onClick={handleIncrement}
+                    disabled={!product.inStock}
+                    className="w-10 h-full hover:bg-brand-sand/30 text-brand-forest font-semibold text-sm transition-colors duration-200 cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    +
+                  </button>
+                </div>
+
+                {/* Wishlist Button */}
                 <button
-                  onClick={handleDecrement}
-                  disabled={!product.inStock}
-                  className="w-10 h-full hover:bg-brand-sand/30 text-brand-forest font-semibold text-sm transition-colors duration-200 cursor-pointer disabled:cursor-not-allowed"
+                  onClick={() => toggleWishlist(product)}
+                  className="flex-grow h-12 border border-brand-sand rounded-[2px] flex items-center justify-center gap-2 text-[#1A1A1A] hover:text-[#C9A76A] hover:border-[#C9A76A] transition-all duration-200 cursor-pointer bg-white text-xs font-bold uppercase tracking-[1px]"
+                  aria-label="Add to Wishlist"
                 >
-                  –
-                </button>
-                <span className="w-10 text-center font-mono text-sm font-bold text-brand-forest">
-                  {quantity}
-                </span>
-                <button
-                  onClick={handleIncrement}
-                  disabled={!product.inStock}
-                  className="w-10 h-full hover:bg-brand-sand/30 text-brand-forest font-semibold text-sm transition-colors duration-200 cursor-pointer disabled:cursor-not-allowed"
-                >
-                  +
+                  <Heart className={`w-4 h-4 ${isFav ? "fill-red-400 text-red-400" : "text-[#1A1A1A]"}`} />
+                  <span>{isFav ? "Saved" : "Wishlist"}</span>
                 </button>
               </div>
 
-              {/* Add to Cart */}
+              {/* Row 2: Add to Cart (Full Width) */}
               <button
                 onClick={handleAddToCart}
                 disabled={!product.inStock}
-                className={`flex-grow h-12 rounded-[2px] text-xs sm:text-sm font-bold uppercase tracking-[1px] transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-xs ${
+                className={`w-full h-12 rounded-[2px] text-xs sm:text-sm font-bold uppercase tracking-[1px] transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-xs ${
                   product.inStock 
                     ? "bg-brand-gold hover:bg-brand-gold/90 text-brand-forest" 
                     : "bg-brand-sand text-brand-forest/40 cursor-not-allowed"
@@ -192,15 +205,6 @@ export default function QuickViewModal() {
               >
                 <ShoppingBag className="w-4.5 h-4.5 text-white" />
                 <span>Add {quantity > 1 ? `${quantity} items` : "to Bag"}</span>
-              </button>
-
-              {/* Add to Wishlist */}
-              <button
-                onClick={() => toggleWishlist(product)}
-                className="w-12 h-12 border border-brand-sand rounded-[2px] flex items-center justify-center text-[#1A1A1A] hover:text-[#C9A76A] hover:border-[#C9A76A] transition-all duration-200 cursor-pointer bg-white"
-                aria-label="Add to Wishlist"
-              >
-                <Heart className={`w-5 h-5 ${isFav ? "fill-red-400 text-red-400" : "text-[#1A1A1A]"}`} />
               </button>
             </div>
 
