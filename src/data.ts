@@ -1,47 +1,48 @@
+// src/data.ts
 import { Product, Category, Testimonial } from "./types";
 
 export const CATEGORIES: Category[] = [
   {
     id: "cat-1",
-    name: "Resin Keychains",
-    slug: "resin-keychains",
-    image: "https://images.unsplash.com/photo-1621259182978-f09e5122ae8e?auto=format&fit=crop&w=500&q=80",
-    description: "Personalized monogram and botanical letter keychains with shimmering gold foil accents."
+    name: "Resin Frames",
+    slug: "resin-frames",
+    image: "./public/products/Message Bloom Plaque.jpg",
+    description: "Encase your cherished memories in a beautiful resin frame."
   },
   {
     id: "cat-2",
-    name: "Resin Photo Frames",
-    slug: "resin-photo-frames",
-    image: "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&w=500&q=80",
-    description: "Encase your cherished memories in floral and fluid art resin borders."
+    name: "Resin Keychains",
+    slug: "resin-keychains",
+    image: "./public/products/Alphabet Resin Keychain.jpg",
+    description: "Personalized monogram and botanical letter keychains with shimmering gold foil accents."
   },
   {
     id: "cat-3",
     name: "Resin Wall Clocks",
     slug: "resin-wall-clocks",
-    image: "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=500&q=80",
+    image: "./public/products/Luxe Petal Clock.jpg",
     description: "Breathtaking ocean wave and marble-texture clocks featuring live-edge olive wood."
-  },
-  {
-    id: "cat-4",
-    name: "Serving Trays",
-    slug: "serving-trays",
-    image: "https://images.unsplash.com/photo-1610701596007-11502861dcfa?auto=format&fit=crop&w=500&q=80",
-    description: "Premium hosting trays combining raw timber slabs with glass-like resin shorelines."
-  },
-  {
-    id: "cat-5",
-    name: "Coasters",
-    slug: "coasters",
-    image: "https://images.unsplash.com/photo-1603006905003-be475563bc59?auto=format&fit=crop&w=500&q=80",
-    description: "Luxury geode and metallic leaf coasters with scratch-resistant premium finish."
   },
   {
     id: "cat-6",
     name: "Jewelry",
     slug: "jewelry",
-    image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=500&q=80",
+    image: "./public/products/Pressed Flower Resin Pendant.webp",
     description: "Delicate silver and gold bezels encasing preserved wildflowers and crystals."
+  },
+  {
+    id: "cat-7",
+    name: "Customizable Boquets",
+    slug: "customizable-boquets",
+    image: "./public/products/Forever Bloom Bouquet.png",
+    description: "Personalized Bouquets — blending chocolate indulgence and timeless memories into gifts as unique as your story."
+  },
+  {
+    id: "cat-8",
+    name: "Resin Photo Frames",
+    slug: "resin-photo-frames",
+    image: "./public/products/Floral Resin Photo Frame.png",
+    description: "Encase your cherished memories in floral and fluid art resin borders."
   }
 ];
 
@@ -49,195 +50,424 @@ export const PRODUCTS: Product[] = [
   // 1. Resin Keychains
   {
     id: "prod-1",
-    name: "Golden Botanical Monogram Keychain",
-    category: "Resin Keychains",
+    name: "Message Bloom Plaque",
+    category: "Resin Frames",
     price: 18.00,
     rating: 4.9,
     reviewsCount: 142,
-    image: "https://images.unsplash.com/photo-1621259182978-f09e5122ae8e?auto=format&fit=crop&w=600&q=80",
+    image: "./public/products/Message Bloom Plaque.jpg",
     isBestSeller: true,
-    description: "A custom letter keychain featuring hand-pressed baby's breath, dried rose petals, and genuine 24k gold leaf flakes embedded in high-gloss, UV-resistant crystal resin. Fitted with a luxurious gold clasp.",
-    dimensions: "1.5\" x 1.5\" (varies by letter)",
+    description: "Celebrate life's special moments with a handcrafted personalized resin plaque, beautifully designed with preserved flowers, custom photos, heartfelt messages, and elegant pearl and gold foil accents. Each piece is carefully handmade using premium crystal-clear resin, creating a timeless keepsake that's perfect for birthdays, anniversaries, Mother's Day, weddings, and other meaningful occasions.",
+    dimensions: "8\" x 8\"",
     materials: ["UV-Resistant Resin", "Dried Florals", "24k Gold Foil", "Brass Hardware"],
     inStock: true,
-    features: ["Scratch-resistant glaze", "Free custom monogram", "Hypoallergenic keychain clasp"]
   },
   {
     id: "prod-2",
-    name: "Ocean Tide Teal Shimmer Keychain",
-    category: "Resin Keychains",
+    name: "Date & Memory Plaque",
+    category: "Resin Frames",
     price: 14.50,
     rating: 4.7,
-    reviewsCount: 56,
-    image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80",
-    description: "Capturing the serene waves of coastal tide pools in a miniature pocket charm. Made with turquoise mica powder, titanium white wave cells, and actual white sand from pristine shores.",
-    dimensions: "2.0\" Circular Ring",
-    materials: ["Mica Pigments", "Beach Sand", "Resin", "Stainless Steel"],
+      reviewsCount: 56,
+      image: "./public/products/Date & Memory Plaque.png",
+    description: "A handcrafted resin plaque featuring a personalized photo, custom calendar date, names, and custom text, beautifully accented with preserved flowers and delicate gold foil. Crafted from premium crystal-clear resin, this keepsake offers a timeless way to display cherished memories while adding an elegant decorative touch to any space.",
+
+    dimensions: "8\" × 8\"",
+    
+    materials: [
+      "Premium Crystal-Clear Resin",
+      "Preserved Dried Flowers",
+      "Gold Foil Accents",
+      "UV-Resistant Resin",
+      "High-Quality Vinyl Printing",
+      "Wooden Display Stand"
+    ],
+    
     inStock: true,
-    features: ["Authentic ocean cells", "Double-sided dome finish", "Waterproof"]
+    
+    features: [
+      "Fully Personalized Design",
+      "Custom Photo & Calendar Date",
+      "Real Preserved Flowers",
+      "Premium Crystal-Clear Finish",
+      "Handcrafted with Care",
+      "Fade-Resistant & Durable"
+    ]
   },
 
   // 2. Resin Photo Frames
   {
     id: "prod-3",
-    name: "Wildflower Meadows Botanical Photo Frame",
-    category: "Resin Photo Frames",
+    name: "Alphabet Resin Keychain",
+    category: "Resin Keychains",
     price: 42.00,
     rating: 4.8,
     reviewsCount: 88,
-    image: "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&w=600&q=80",
+    image: "./public/products/Alphabet Resin Keychain.jpg",
     isBestSeller: true,
-    description: "Bring the tranquility of a spring meadow to your favorite memory. This freestanding frame incorporates pressed daisies, ferns, cornflowers, and elegant gold flakes wrapped around a vintage wooden inner trim.",
-    dimensions: "5\" x 7\" photo window (Overall: 7\" x 9\")",
-    materials: ["Hand-pressed Flowers", "Gold Leaf", "Varnished Oak Wood", "Epoxy Resin"],
+    description: "A handcrafted alphabet resin keychain featuring real preserved flowers, delicate gold foil accents, and premium crystal-clear resin. Personalized with your chosen initial, each keychain is uniquely designed to add a stylish and meaningful touch to your keys, bags, or everyday accessories.",
+
+    dimensions: "2\" - 2.5\" Height (Varies by Letter)",
+    
+    materials: [
+      "Premium Crystal-Clear Resin",
+      "Preserved Dried Flowers",
+      "Gold Foil Accents",
+      "Premium Key Ring",
+      "Gold-Plated Hardware"
+    ],
+    
     inStock: true,
-    features: ["Sturdy dual-orientation kickstand", "Anti-yellowing UV blocker", "Individually arranged botanicals"]
+    
+    features: [
+      "Personalized Initial Design",
+      "Real Preserved Flowers",
+      "Handcrafted Finish",
+      "Lightweight & Durable",
+      "Scratch-Resistant Surface",
+      "Perfect for Keys & Bags"
+    ]
   },
 
   // 3. Resin Wall Clocks
   {
     id: "prod-4",
-    name: "Pacific Shore Ocean Wave Clocks",
-    category: "Resin Wall Clocks",
-    price: 145.00,
+    name: "Floral Resin Photo Frame",
+      category: "Resin Photo Frames",
+      price: 145.00,
     rating: 5.0,
     reviewsCount: 112,
-    image: "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=80",
+    image: "./public/products/Floral Resin Photo Frame.png",
     isBestSeller: true,
-    description: "A signature statement piece combining centuries-old olive wood slabs with modern resin ocean-pouring techniques. Features 3-4 distinct layered waves crashing against a sandy beach. No two wood grains or tide lines are alike.",
-    dimensions: "14\" Diameter (Thickness: 1.2\")",
-    materials: ["Aged Olive Wood", "Liquid Glass Epoxy", "Premium Resin Pigments", "Silent Quartz Movement"],
+    description: "A handcrafted resin photo frame featuring your favorite photo surrounded by real preserved flowers and delicate gold foil accents. Crafted from premium crystal-clear resin, this elegant frame transforms cherished moments into a timeless keepsake while adding a beautiful decorative touch to any space.",
+
+    dimensions: "4\" × 6\" Photo (Overall: 6\" × 8\")",
+    
+    materials: [
+      "Premium Crystal-Clear Resin",
+      "Real Preserved Flowers",
+      "Gold Foil Accents",
+      "High-Quality Photo Print",
+      "UV-Resistant Resin"
+    ],
+    
     inStock: true,
-    features: ["Completely silent sweeps (no ticking)", "Sturdy heavy-duty wall hanger pre-installed", "Treated with organic beeswax and orange oil"]
+    
+    features: [
+      "Personalized Photo Display",
+      "Real Preserved Flowers",
+      "Handcrafted Design",
+      "Crystal-Clear Gloss Finish",
+      "Freestanding Display",
+      "Fade-Resistant & Durable"
+    ]
   },
   {
     id: "prod-5",
-    name: "White Marble & Gold Leaf Hexagon Clock",
-    category: "Resin Wall Clocks",
+    name: "Velvet Indulgence Bouquet",
+    category: "Customizable Boquets",
     price: 120.00,
     rating: 4.9,
     reviewsCount: 39,
-    image: "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?auto=format&fit=crop&w=600&q=80",
-    description: "A sleek geometric clock radiating modern luxury. Styled with delicate pearlescent white resin, fine black marble-style veins, and bold streaks of hand-applied gold leaf.",
-    dimensions: "12\" Point-to-Point Hexagon",
-    materials: ["Eco-Epoxy Resin", "Gold Leaf", "Silent Quartz Sweep"],
-    inStock: true,
-    features: ["Brushed gold metal hands", "Minimalist hour markers", "Easy battery slot"]
+    image: "./public/products/Velvet Indulgence Bouquet.png",
+    description: "A handcrafted chocolate bouquet featuring premium chocolates, fresh roses, delicate baby's breath flowers, and elegant luxury wrapping. Beautifully arranged with premium ribbons and floral accents, this bouquet offers a unique blend of sweetness and sophistication, making it a thoughtful gift and a stunning presentation for any special occasion.",
+
+dimensions: "Approx. 16\" × 10\" (Varies by Arrangement)",
+
+materials: [
+  "Premium Chocolates",
+  "Fresh Roses",
+  "Baby's Breath Flowers",
+  "Premium Bouquet Wrapping",
+  "Satin Ribbon",
+  "Floral Fillers"
+],
+
+inStock: true,
+
+features: [
+  "Handcrafted Floral Arrangement",
+  "Premium Chocolate Selection",
+  "Elegant Gift Wrapping",
+  "Fresh Floral Accents",
+  "Ready to Gift",
+  "Customizable Design"
+]
   },
 
-  // 4. Serving Trays
+
   {
     id: "prod-6",
-    name: "Aegean Sea River Serving Board",
-    category: "Serving Trays",
+    name: "First Year Memories Clock",
+    category: "Resin Wall Clocks",
     price: 85.00,
     rating: 4.9,
     reviewsCount: 95,
-    image: "https://images.unsplash.com/photo-1610701596007-11502861dcfa?auto=format&fit=crop&w=600&q=80",
+    image: "./public/products/First Year Memories Clock.png",
     isBestSeller: true,
-    description: "A beautiful fusion of rustic woodcraft and liquid ocean. This live-edge acacia wood tray features an artistic resin 'river' complete with translucent sea-teal depth and white frothy lace details. Perfect for charcuterie or gourmet spreads.",
-    dimensions: "18\" x 10\" x 0.8\"",
-    materials: ["Live-edge Acacia Wood", "Food-Safe Certified Resin", "Black Matte Steel Handles"],
-    inStock: true,
-    features: ["100% food-safe certified finish", "Comfort-grip ergonomic metal handles", "Silicone non-slip feet on bottom"]
+    description: "A handcrafted personalized resin clock designed to showcase your baby's first year through twelve cherished milestone photos. Featuring custom names, birth details, and a premium glossy resin finish, this unique keepsake beautifully preserves precious memories while serving as an elegant functional décor piece for your home.",
+
+dimensions: "12\" Diameter",
+
+materials: [
+  "Premium Crystal-Clear Resin",
+  "High-Quality Photo Prints",
+  "Silent Quartz Clock Movement",
+  "Gold-Finish Clock Hands",
+  "UV-Resistant Resin"
+],
+
+inStock: true,
+
+features: [
+  "12 Monthly Milestone Photos",
+  "Personalized Name & Birth Details",
+  "Silent Quartz Movement",
+  "Handcrafted Premium Finish",
+  "Fade-Resistant & Durable",
+  "Ready to Hang"
+]
   },
 
   // 5. Coasters
   {
     id: "prod-7",
-    name: "Emerald Quartz Geode Coaster Set",
-    category: "Coasters",
+    name: "Photo Bloom Resin Clock",
+    category: "Resin Wall Clocks",
     price: 36.00,
     rating: 4.8,
     reviewsCount: 210,
-    image: "https://images.unsplash.com/photo-1603006905003-be475563bc59?auto=format&fit=crop&w=600&q=80",
+    image: "./public/products/Photo Bloom Resin Clock.png",
     isBestSeller: true,
-    description: "A set of four breathtaking hand-poured geode coasters replicating the crystallization of emerald gemstones. Outlined with stunning hand-painted gold gilded rims and embedded with high-grade reflective glitter center clusters.",
-    dimensions: "4.5\" Diameter (Set of 4)",
-    materials: ["Pigmented Resin", "Gilded Gold Paint", "Faux Crystal Glitters", "Protective Clear Rubber Bumpers"],
+    description: "A handcrafted personalized resin clock featuring your favorite photo, preserved roses, elegant Roman numerals, and delicate gold foil accents. Crafted with premium crystal-clear resin and a silent quartz movement, this unique timepiece beautifully combines meaningful memories with functional home décor.",
+
+    dimensions: "12\" Diameter",
+    
+    materials: [
+      "Premium Crystal-Clear Resin",
+      "Real Preserved Roses",
+      "Gold Foil Accents",
+      "High-Quality Photo Print",
+      "Silent Quartz Clock Movement",
+      "Gold-Finish Clock Hands"
+    ],
+    
     inStock: true,
-    features: ["Heat resistant up to 140°F/60°C", "Scratch-resistant crystal top layer", "Includes beautiful gold metal holder"]
+    
+    features: [
+      "Personalized Photo & Names",
+      "Real Preserved Roses",
+      "Silent Quartz Movement",
+      "Handcrafted Premium Finish",
+      "Fade-Resistant & Durable",
+      "Ready to Hang"
+    ]
   },
 
   // 6. Jewelry
   {
     id: "prod-8",
-    name: "Preserved Moss & Fern Teardrop Pendant",
-    category: "Jewelry",
+    name: "Pressed Flower Resin Pendant",
+    category: "Resin Pendants",
     price: 28.00,
     rating: 4.9,
     reviewsCount: 64,
-    image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=600&q=80",
-    description: "A wearable token of the forest. Features delicate maidenhair fern fronds and emerald green star moss preserved in a crystal-clear drop of high-grade resin, set in an elegant 18k gold plated teardrop frame.",
-    dimensions: "1.2\" Pendant (with 18\" Adjustable Chain)",
-    materials: ["Pressed Fern & Moss", "18k Gold Plated Brass", "Eco-Friendly Jewelry Resin"],
+    image: "./public/products/Pressed Flower Resin Pendant.webp",
+    description: "A handcrafted resin pendant featuring real pressed flowers preserved in premium crystal-clear resin and finished with an elegant gold-tone frame and matching chain. Lightweight and timeless, each pendant showcases the natural beauty of real botanicals, making every piece uniquely beautiful for everyday wear or thoughtful gifting.",
+
+    dimensions: "Pendant: Approx. 1\"–1.5\" (Shape Varies) | Chain Length: 18\" + 2\" Extension",
+    
+    materials: [
+      "Premium Crystal-Clear Resin",
+      "Real Pressed Flowers",
+      "Gold-Tone Alloy Frame",
+      "Gold-Plated Chain",
+      "Protective UV-Resistant Coating"
+    ],
+    
     inStock: true,
-    features: ["Lead-free and nickel-free chain", "Stays vibrant forever", "Comes in premium linen gift box"]
+    
+    features: [
+      "Real Pressed Flowers",
+      "Each Piece is One-of-a-Kind",
+      "Lightweight & Comfortable",
+      "Crystal-Clear Gloss Finish",
+      "Fade-Resistant Resin",
+      "Perfect for Everyday Wear or Gifting"
+    ]
   },
 
   // 7. Bookmarks
   {
     id: "prod-9",
-    name: "Lavender Petals & Gold Leaf Bookmark",
-    category: "Bookmarks",
+    name: "Birth Story Memory Clock",
+    category: "Resin Wall Clocks",
     price: 12.00,
     rating: 4.6,
     reviewsCount: 119,
-    image: "https://images.unsplash.com/photo-1474932430478-367db26836c1?auto=format&fit=crop&w=600&q=80",
-    description: "Elevate your reading ritual. A slender, elegant, clear-glass resin bookmark containing fragrant organic lavender buds and sparkling gold leaf flecks, finished with a matching lilac silk tassel.",
-    dimensions: "5.5\" x 1\" x 0.1\" (Ultra-thin)",
-    materials: ["Epoxy Resin", "Preserved Lavender", "Gold Leaf", "Silk Tassel"],
+    image: "./public/products/Birth Story Memory Clock.png",
+    description: "A handcrafted personalized resin wall clock designed to celebrate a baby's first-year journey. Featuring monthly milestone photos, baby's name, birth details, and a custom color theme, this unique keepsake transforms precious memories into a functional piece of home décor. Made with premium crystal-clear resin and a silent quartz movement, it's a timeless gift for parents and growing families.",
+
+    dimensions: "12\" Diameter",
+    
+    materials: [
+      "Premium Crystal-Clear Resin",
+      "High-Quality Printed Photos",
+      "Gold-Tone Clock Hands",
+      "Silent Quartz Clock Movement",
+      "UV-Resistant Pigments"
+    ],
+    
     inStock: true,
-    features: ["Extremely flexible and drop-proof", "Doesn't damage book spines", "Delicately scented lavender infusion"]
+    
+    features: [
+      "Personalized with Baby's Name",
+      "12 Monthly Milestone Photos",
+      "Custom Birth Details",
+      "Silent Non-Ticking Movement",
+      "Glossy Crystal-Clear Finish",
+      "Ready to Hang",
+      "Perfect Baby Shower & First Birthday Gift"
+    ]
   },
 
   // 8. Name Plates
   {
     id: "prod-10",
-    name: "Live Edge Walnut & Turquoise River Name Plate",
-    category: "Name Plates",
+    name: "Rose Keepsake Plaque",
+    category: "Resin Frames",
     price: 75.00,
     rating: 5.0,
     reviewsCount: 45,
-    image: "https://images.unsplash.com/photo-1613682139695-167232230b05?auto=format&fit=crop&w=600&q=80",
-    description: "An elegant addition to any professional desk. Crafted using a gorgeous block of American Walnut with a hand-poured turquoise resin river cutting down the middle. Personalized with gold-foil laser engraving of your name and title.",
-    dimensions: "10\" x 2.5\" x 1.5\"",
-    materials: ["Premium American Walnut", "Turquoise Mica Resin", "Laser-Etched Gold Foil Ink"],
+    image: "./public/products/Rose Keepsake Plaque.png",
+    description: "A handcrafted resin keepsake plaque featuring a personalized photo, names, special date, and preserved roses beautifully arranged with delicate baby's breath flowers, pearl embellishments, and gold foil accents. Crafted with premium crystal-clear resin, this elegant décor piece preserves life's most cherished memories while adding a timeless floral touch to any home or gifting occasion.",
+
+    dimensions: "8\" Round Plaque",
+    
+    materials: [
+      "Premium Crystal-Clear Resin",
+      "Preserved Roses",
+      "Baby's Breath Flowers",
+      "Pearl Embellishments",
+      "Gold Foil Accents",
+      "High-Quality Printed Photo"
+    ],
+    
     inStock: true,
-    features: ["Perfect weighted bottom", "Includes complementary wood polish oil", "Custom fonts available"]
+    
+    features: [
+      "Personalized Photo & Names",
+      "Custom Date Engraving",
+      "Real Preserved Roses",
+      "Handcrafted Floral Design",
+      "Glossy Crystal Finish",
+      "Perfect for Weddings & Anniversaries",
+      "Freestanding Display"
+    ]
   },
 
   // 9. Home Décor
   {
     id: "prod-11",
-    name: "Golden Hour Iridescent Ring Dish",
-    category: "Home Décor",
+    name: "Round Resin Name Keychain",
+    category: "Resin Keychains",
     price: 22.00,
     rating: 4.7,
     reviewsCount: 32,
-    image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80",
-    description: "A shimmering, iridescent shell-shaped dish designed to cradle your daily jewelry. Cast with specialized color-shifting pearlescent flakes that glimmer beautifully under any warm light.",
-    dimensions: "4\" x 4\" x 0.8\"",
-    materials: ["Iridescent Pearlescent Pigments", "Clear Epoxy Resin"],
+    image: "./public/products/Round Resin Name Keychain.png",
+    description: "A handcrafted resin keychain personalized with your name, initials, or short text. Designed with a glossy crystal-clear finish, elegant pearl details, shimmering pigments, and delicate gold foil accents, this lightweight keychain is both stylish and durable. A perfect everyday accessory or thoughtful personalized gift for friends, family, and loved ones.",
+
+    dimensions: "2\" Round",
+    
+    materials: [
+      "Premium Crystal-Clear Resin",
+      "Gold Foil Accents",
+      "Pearl Embellishments",
+      "Metal Keyring & Chain",
+      "High-Quality Vinyl Name"
+    ],
+    
     inStock: true,
-    features: ["Water-resistant, perfect for bathroom vanity", "Smooth rounded edges", "Soft felt base pads"]
+    
+    features: [
+      "Personalized with Name or Initials",
+      "Handcrafted Design",
+      "Glossy Resin Finish",
+      "Lightweight & Durable",
+      "Scratch-Resistant Surface",
+      "Easy to Attach to Keys or Bags",
+      "Perfect for Gifting"
+    ]
   },
 
   // 10. Custom Gifts
   {
     id: "prod-12",
-    name: "Bespoke Bridal Bouquet Preservation Block",
-    category: "Custom Gifts",
+    name: "Signature Calendar Plaque",
+    category: "Resin Frames",
     price: 180.00,
     rating: 5.0,
     reviewsCount: 155,
-    image: "https://images.unsplash.com/photo-1513201099705-a9746e1e201f?auto=format&fit=crop&w=600&q=80",
+    image: "./public/products/Signature Calendar Plaque.jpg",
     isBestSeller: true,
-    description: "Keep your wedding memories alive forever. Send us your bouquet, and we will carefully dry the flowers using specialized silica gel, then cast them in a massive, heavy, bubble-free clear crystal cube or hexagon resin block.",
-    dimensions: "6\" x 6\" x 3\" (Weighted cube)",
-    materials: ["Customer's Dried Flowers", "Ultra-Clear Deep Pour Cast Resin", "UV-Resistant Protective Sealant"],
+    description: "A handcrafted resin plaque featuring a personalized photo, custom calendar highlighting your special date, names, heartfelt message, and decorative pearl and glitter accents. Made with premium crystal-clear resin, this elegant keepsake beautifully preserves meaningful moments and serves as a timeless décor piece for any home. Each plaque is carefully handcrafted to create a unique and lasting memory.",
+
+    dimensions: "8\" Round Plaque",
+    
+    materials: [
+      "Premium Crystal-Clear Resin",
+      "High-Quality Printed Photo",
+      "Decorative Pearl Embellishments",
+      "Silver Glitter Accents",
+      "UV-Resistant Pigments"
+    ],
+    
     inStock: true,
-    features: ["Advanced multi-layer bubble removal", "Guaranteed anti-yellowing formulation", "Includes custom maple wood LED display stand"]
+    
+    features: [
+      "Personalized Photo",
+      "Custom Calendar Date",
+      "Names & Custom Message",
+      "Handcrafted Design",
+      "Glossy Crystal Finish",
+      "Freestanding Display",
+      "Perfect for Birthdays, Anniversaries & Special Occasions"
+    ]
+  },
+  {
+    id: "prod-12",
+    name: "Floral Resin Wall Clock",
+    category: "Resin Wall Clocks",
+    price: 180.00,
+    rating: 5.0,
+    reviewsCount: 155,
+    image: "./public/products/Floral Resin Wall Clock.png",
+    isBestSeller: true,
+    description: "A handcrafted resin wall clock featuring preserved rose petals, delicate baby's breath flowers, pearl embellishments, elegant Roman numerals, and subtle gold foil accents. Crafted with premium crystal-clear resin and a silent quartz movement, this timeless decorative piece combines natural beauty with everyday functionality, making it a stunning addition to any living space.",
+
+    dimensions: "12\" Diameter",
+    
+    materials: [
+      "Premium Crystal-Clear Resin",
+      "Preserved Rose Petals",
+      "Baby's Breath Flowers",
+      "Pearl Embellishments",
+      "Gold Foil Accents",
+      "Silent Quartz Clock Movement",
+      "Gold-Tone Clock Hands"
+    ],
+    
+    inStock: true,
+    
+    features: [
+      "Handcrafted Floral Design",
+      "Silent Non-Ticking Movement",
+      "Elegant Roman Numerals",
+      "Glossy Crystal Finish",
+      "Wall-Mount Ready",
+      "Lightweight & Durable",
+      "Perfect for Home & Gift Decor"
+    ]
   }
 ];
 
@@ -247,44 +477,44 @@ export const TESTIMONIALS: Testimonial[] = [
     name: "Eleanor Sterling",
     role: "Interior Designer",
     rating: 5,
-    text: "The Pacific Shore Ocean Wave Clock is the absolute centerpiece of my living room. The depth in the ocean waves is genuinely mesmerizing—it looks like real glass. Guests ask about it immediately. The customer service and care sheet provided are top-tier.",
+    text: "The Floral Resin Wall Clock is the absolute centerpiece of my living room. The depth of the preserved rose petals is genuinely mesmerizing—it looks like real glass. Guests ask about it immediately. The customer service and care sheet provided are top-tier.",
     avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80",
     date: "June 14, 2026",
     verified: true,
-    productName: "Pacific Shore Ocean Wave Clocks"
+    productName: "Floral Resin Wall Clock"
   },
   {
     id: "rev-2",
     name: "Julian Mercer",
     role: "Art Collector",
     rating: 5,
-    text: "I ordered a custom bridal bouquet preservation block for my wife's anniversary. The results surpassed our wildest dreams. The roses look perfectly preserved and floating in air, and the bubble-free glass finish is flawless. Well worth the price.",
+    text: "I ordered the Rose Keepsake Plaque for my wife's anniversary. The results surpassed our wildest dreams. The roses look perfectly preserved and floating in air, and the bubble-free glass finish is flawless. Well worth the price.",
     avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
     date: "May 28, 2026",
     verified: true,
-    productName: "Bespoke Bridal Bouquet Preservation Block"
+    productName: "Rose Keepsake Plaque"
   },
   {
     id: "rev-3",
     name: "Clara Vandermeer",
     role: "Graphic Artist",
     rating: 5,
-    text: "I bought the Emerald Quartz Geode Coasters as a housewarming gift. The packaging alone felt like opening a luxurious jewel box. The gold gilded rims are thick, glossy, and beautifully painted. They are robust and heavy. I will definitely be ordering more for myself!",
+    text: "I bought the Signature Calendar Plaque as a housewarming gift. The packaging alone felt like opening a luxurious jewel box. The pearl embellishments are thick, glossy, and beautifully painted. They are robust and heavy. I will definitely be ordering more for myself!",
     avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80",
     date: "April 10, 2026",
     verified: true,
-    productName: "Emerald Quartz Geode Coaster Set"
+    productName: "Signature Calendar Plaque"
   },
   {
     id: "rev-4",
     name: "Marcus Vance",
     role: "Corporate Executive",
     rating: 4,
-    text: "Outstanding work on the Walnut & Turquoise river name plate. It commands attention on my executive desk. The turquoise resin stands out with subtle metallic shimmers in the light. Fast shipping and extremely secure bubble wrap packaging.",
+    text: "Outstanding work on the First Year Memories Clock. It commands attention in our nursery. The crystal-clear resin stands out beautifully, and the milestone photos look fantastic. Fast shipping and extremely secure bubble wrap packaging.",
     avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80",
     date: "March 22, 2026",
     verified: true,
-    productName: "Live Edge Walnut & Turquoise River Name Plate"
+    productName: "First Year Memories Clock"
   }
 ];
 

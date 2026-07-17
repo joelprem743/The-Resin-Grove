@@ -198,6 +198,57 @@ export interface SupabaseCartItem {
   personalization_text?: string | null;
 }
 
+
+// ==========================================
+// REVIEWS HELPERS
+// ==========================================
+
+// Fetch all reviews from Supabase
+export async function fetchReviewsFromSupabase(): Promise<any[] | null> {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from("reviews")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching reviews from Supabase:", error);
+      return null;
+    }
+    return data;
+  } catch (err) {
+    console.error("Supabase fetch reviews exception:", err);
+    return null;
+  }
+}
+
+// Save a new review to Supabase
+export async function saveReviewToSupabase(review: any): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from("reviews").insert([{
+      name: review.name,
+      role: review.role,
+      rating: review.rating,
+      text: review.text,
+      avatar: review.avatar,
+      date: review.date,
+      verified: review.verified,
+      product_name: review.productName,
+    }]);
+
+    if (error) {
+      console.error("Error saving review to Supabase:", error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("Supabase save review exception:", err);
+    return false;
+  }
+}
+
 // Sync cart helper: Saves the current client state to Supabase
 // export async function syncCartToSupabase(userId: string, items: any[]): Promise<boolean> {
 //   if (!supabase) return false;

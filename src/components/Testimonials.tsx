@@ -1,33 +1,60 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { TESTIMONIALS } from "../data";
+import { TESTIMONIALS, PRODUCTS } from "../data";
 import { Testimonial } from "../types";
-import { Star, MessageSquare, Plus, Check, ShieldCheck } from "lucide-react";
+import { Star, MessageSquare, Check, ShieldCheck } from "lucide-react";
+import { fetchReviewsFromSupabase, saveReviewToSupabase, isSupabaseConfigured } from "../lib/supabase";
 
 export default function Testimonials() {
   const [reviews, setReviews] = useState<Testimonial[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [newReview, setNewReview] = useState({
     name: "",
     role: "",
     text: "",
     rating: 5,
-    productName: "Pacific Shore Ocean Wave Clocks"
+    productName: PRODUCTS[0].name // Dynamically set default to the first product
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   useEffect(() => {
-    // Seed with existing testimonials
-    setReviews(TESTIMONIALS);
+    // Load reviews from Supabase, fallback to local data if not configured or fetch fails
+    const loadReviews = async () => {
+      if (isSupabaseConfigured) {
+        const dbReviews = await fetchReviewsFromSupabase();
+        if (dbReviews && dbReviews.length > 0) {
+          const mapped: Testimonial[] = dbReviews.map((r: any) => ({
+            id: r.id,
+            name: r.name,
+            role: r.role || "Verified Collector",
+            rating: r.rating,
+            text: r.text,
+            avatar: r.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+            date: r.date,
+            verified: r.verified ?? true,
+            productName: r.product_name
+          }));
+          setReviews(mapped);
+          return;
+        }
+      }
+      // Fallback to static data
+      setReviews(TESTIMONIALS);
+    };
+
+    loadReviews();
   }, []);
 
   const handleRatingSelect = (rate: number) => {
     setNewReview((prev) => ({ ...prev, rating: rate }));
   };
 
-  const handleSubmitReview = (e: React.FormEvent) => {
+  const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newReview.name || !newReview.text) return;
+
+    setIsSubmitting(true);
 
     const addedReview: Testimonial = {
       id: `rev-${Date.now()}`,
@@ -35,14 +62,20 @@ export default function Testimonials() {
       role: newReview.role || "Verified Collector",
       rating: newReview.rating,
       text: newReview.text,
-      avatar: `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80`, // Elegant placeholder avatar
+      avatar: `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80`,
       date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
       verified: true,
       productName: newReview.productName
     };
 
+    // Save to Supabase
+    await saveReviewToSupabase(addedReview);
+
+    // Update local state
     setReviews((prev) => [addedReview, ...prev]);
+    setIsSubmitting(false);
     setIsSubmitted(true);
+    
     setTimeout(() => {
       setIsSubmitted(false);
       setShowForm(false);
@@ -51,7 +84,7 @@ export default function Testimonials() {
         role: "",
         text: "",
         rating: 5,
-        productName: "Pacific Shore Ocean Wave Clocks"
+        productName: PRODUCTS[0].name
       });
     }, 2000);
   };
@@ -136,11 +169,12 @@ export default function Testimonials() {
                           onChange={(e) => setNewReview(prev => ({ ...prev, productName: e.target.value }))}
                           className="w-full bg-brand-ivory/50 border border-brand-sand rounded-[2px] px-3.5 py-2.5 text-xs text-[#1A1A1A] focus:outline-hidden focus:ring-1 focus:ring-[#C9A76A] cursor-pointer"
                         >
-                          <option>Pacific Shore Ocean Wave Clocks</option>
-                          <option>Emerald Quartz Geode Coaster Set</option>
-                          <option>Golden Botanical Monogram Keychain</option>
-                          <option>Aegean Sea River Serving Board</option>
-                          <option>Bespoke Bridal Bouquet Preservation Block</option>
+                          {/* Dynamically map products from data.ts */}
+                          {PRODUCTS.map((product) => (
+                            <option key={product.id} value={product.name}>
+                              {product.name}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div>
@@ -180,9 +214,10 @@ export default function Testimonials() {
 
                     <button
                       type="submit"
-                      className="w-full py-3 bg-[#C9A76A] text-white rounded-[2px] text-xs font-bold uppercase tracking-[1px] cursor-pointer shadow-xs hover:bg-[#bfa065] transition-colors"
+                      disabled={isSubmitting}
+                      className="w-full py-3 bg-[#C9A76A] text-white rounded-[2px] text-xs font-bold uppercase tracking-[1px] cursor-pointer shadow-xs hover:bg-[#bfa065] transition-colors disabled:opacity-50"
                     >
-                      Publish Verified Review
+                      {isSubmitting ? "Publishing..." : "Publish Verified Review"}
                     </button>
                   </form>
                 )}
