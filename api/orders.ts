@@ -2,11 +2,11 @@
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 const supabase = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
 
-const ADMIN_EMAIL = process.env.VITE_ADMIN_EMAIL || "joelpremtej@gmail.com";
+const ADMIN_EMAIL = process.env.VITE_ADMIN_EMAIL || process.env.ADMIN_EMAIL || "joelpremtej@gmail.com";
 
 // SMTP Configuration
 async function sendEmail({ to, subject, html }) {
@@ -113,28 +113,93 @@ export default async function handler(req, res) {
       }
     }
 
-    // 2. Build Email HTML
+    // 2. Build Luxury Email HTML
     let itemsHtml = "";
     cart.forEach((item) => {
-      itemsHtml += `<div style="padding: 10px; border: 1px solid #eee; margin-bottom: 10px;">
-        <strong>${item.product.name} (x${item.quantity})</strong> - ₹${(item.product.price * item.quantity).toFixed(2)}<br>
-        ${item.selectedWood ? `Wood: ${item.selectedWood}<br>` : ""}
-        ${item.selectedResinColor ? `Resin: ${item.selectedResinColor}<br>` : ""}
-        ${item.customPhotoUrl ? `<br><img src="${item.customPhotoUrl}" style="width:100px; height:100px; object-fit:cover; border-radius:4px;" />` : ""}
-      </div>`;
+      itemsHtml += `
+        <div style="padding: 12px; border-bottom: 1px solid #EAEAEA;">
+          <h4 style="margin: 0 0 4px 0; font-family: sans-serif; color: #1A1A1A;">${item.product.name} (x${item.quantity})</h4>
+          <p style="margin: 0; font-size: 11px; color: #C9A76A; font-weight: bold; text-transform: uppercase;">${item.product.category || 'Item'}</p>
+          <p style="margin: 4px 0 0 0; font-family: monospace; font-size: 12px; font-weight: bold; color: #1A1A1A;">Price: ₹${(item.product.price * item.quantity).toFixed(2)}</p>
+      `;
+
+      // Add custom configurations if they exist
+      if (item.selectedWood || item.selectedResinColor || item.selectedDeco || item.personalizationText) {
+        itemsHtml += `<div style="margin-top: 8px; padding: 8px; background: #FAF8F5; border: 1px solid #E6D7B8; border-radius: 2px; font-size: 11px; color: #5A5A5A;">`;
+        if (item.selectedWood) itemsHtml += `<div>• Wood Type: <strong>${item.selectedWood}</strong></div>`;
+        if (item.selectedResinColor) itemsHtml += `<div>• Resin Color: <strong>${item.selectedResinColor}</strong></div>`;
+        if (item.selectedDeco && item.selectedDeco.length > 0) itemsHtml += `<div>• Inclusions: <strong>${item.selectedDeco.join(", ")}</strong></div>`;
+        if (item.personalizationText) itemsHtml += `<div style="font-family: sans-serif; margin-top: 4px; color: #C9A76A;">• Engraving: <em>"${item.personalizationText}"</em></div>`;
+        itemsHtml += `</div>`;
+      }
+
+      // Add the Custom Photo to the email if it exists
+      if (item.customPhotoUrl) {
+        itemsHtml += `
+          <div style="margin-top: 8px; padding: 8px; background: #FAF8F5; border: 1px solid #E6D7B8; border-radius: 2px; font-size: 11px; color: #5A5A5A;">
+            <div style="margin-bottom: 4px;">• <strong>Customer Uploaded Photo:</strong></div>
+            <a href="${item.customPhotoUrl}" target="_blank" style="display: inline-block;">
+              <img src="${item.customPhotoUrl}" alt="Custom Upload" style="width: 120px; height: 120px; object-fit: cover; border-radius: 4px; border: 1px solid #D9CBB3;" />
+            </a>
+          </div>
+        `;
+      }
+      itemsHtml += `</div>`;
     });
 
     const emailHtml = `
-      <h2>New Order: ${newOrder.id}</h2>
-      <p><strong>Customer:</strong> ${shippingDetails.name}</p>
-      <p><strong>Email:</strong> ${shippingDetails.email}</p>
-      <p><strong>Phone:</strong> ${shippingDetails.phone}</p>
-      <p><strong>Address:</strong> ${shippingDetails.address}, ${shippingDetails.zip}</p>
-      <hr>
-      <h3>Items:</h3>
-      ${itemsHtml}
-      <hr>
-      <h3>Total: ₹${newOrder.grandTotal.toFixed(2)}</h3>
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #D9CBB3; background: #FAF8F5; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div style="background: #1A1A1A; padding: 24px; text-align: center; border-bottom: 2px solid #C9A76A;">
+          <h1 style="color: #FFFFFF; font-family: sans-serif; margin: 0; font-weight: normal; font-size: 24px; letter-spacing: 1px;">The Resin Grove</h1>
+          <p style="color: #C9A76A; font-size: 11px; text-transform: uppercase; margin: 6px 0 0 0; letter-spacing: 2px; font-weight: bold;">New Order Notification</p>
+        </div>
+        <div style="padding: 24px; background: #FFFFFF;">
+          <h3 style="color: #1A1A1A; font-family: sans-serif; border-bottom: 1px solid #D9CBB3; padding-bottom: 8px; margin-top: 0;">Customer Information</h3>
+          <table style="width: 100%; font-size: 12px; color: #333333; margin-bottom: 24px; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 4px 0; font-weight: bold; width: 120px; color: #5A5A5A;">Name:</td>
+              <td style="padding: 4px 0; color: #1A1A1A; font-weight: 600;">${shippingDetails.name}</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; font-weight: bold; color: #5A5A5A;">Email:</td>
+              <td style="padding: 4px 0; color: #1A1A1A; font-weight: 600;"><a href="mailto:${shippingDetails.email}" style="color: #C9A76A; text-decoration: none;">${shippingDetails.email}</a></td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; font-weight: bold; color: #5A5A5A;">Phone:</td>
+              <td style="padding: 4px 0; color: #1A1A1A; font-weight: 600;">${shippingDetails.phone}</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; font-weight: bold; color: #5A5A5A;">Shipping Address:</td>
+              <td style="padding: 4px 0; color: #1A1A1A;">${shippingDetails.address}, ZIP: ${shippingDetails.zip}</td>
+            </tr>
+          </table>
+          
+          <h3 style="color: #1A1A1A; font-family: sans-serif; border-bottom: 1px solid #D9CBB3; padding-bottom: 8px; margin-top: 0;">Order Summary</h3>
+          <div style="font-size: 12px; padding: 12px; background: #FAF8F5; border: 1px solid #EAEAEA; margin-bottom: 24px; border-radius: 2px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span style="color: #5A5A5A;">Order ID:</span>
+              <span style="font-weight: bold; font-family: monospace; color: #1A1A1A;">${newOrder.id}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span style="color: #5A5A5A;">Date:</span>
+              <span style="color: #1A1A1A;">${new Date().toLocaleDateString()}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; border-top: 1px dashed #D9CBB3; padding-top: 8px; margin-top: 8px;">
+              <span style="color: #1A1A1A;">Total Order Value:</span>
+              <span style="color: #C9A76A;">₹${newOrder.grandTotal.toFixed(2)}</span>
+            </div>
+          </div>
+          
+          <h3 style="color: #1A1A1A; font-family: sans-serif; border-bottom: 1px solid #D9CBB3; padding-bottom: 8px; margin-top: 0;">Curation Items</h3>
+          <div style="border: 1px solid #EAEAEA; border-radius: 2px;">
+            ${itemsHtml}
+          </div>
+        </div>
+        <div style="background: #1A1A1A; color: #888888; padding: 16px; text-align: center; font-size: 10px;">
+          <p style="margin: 0 0 4px 0; color: #C9A76A;">The Resin Grove Automated System</p>
+          <p style="margin: 0;">This email was automatically generated and sent upon customer confirmation.</p>
+        </div>
+      </div>
     `;
 
     // 3. Send Email Notification via SMTP
