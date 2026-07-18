@@ -367,7 +367,7 @@ async function startServer() {
         });
       }
 
-      const adminEmailAddress = process.env.ADMIN_EMAIL || "admin@theresingrove.com";
+      const adminEmailAddress = process.env.VITE_ADMIN_EMAIL || "joelpremtej@gmail.com";
       const emailSubject = `[The Resin Grove] New Custom Design Inquiry - ${newInquiry.id}`;
 
       let configHtml = "";
