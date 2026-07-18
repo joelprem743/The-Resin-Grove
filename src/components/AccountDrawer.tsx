@@ -176,9 +176,12 @@ export default function AccountDrawer() {
     }
   };
 
-  const fetchUserOrders = async () => {
+  const fetchUserOrders = async (isInitialLoad = false) => {
     if (!user?.email) return;
-    setLoadingOrders(true);
+    
+    // Only show the loading spinner on the very first load, NOT on background polls
+    if (isInitialLoad) setLoadingOrders(true);
+    
     try {
       const res = await fetch(`/api/user/orders?email=${encodeURIComponent(user.email)}`);
       if (res.ok) {
@@ -188,25 +191,27 @@ export default function AccountDrawer() {
     } catch (err) {
       console.error("Error loading user orders:", err);
     } finally {
-      setLoadingOrders(false);
+      if (isInitialLoad) setLoadingOrders(false);
     }
   };
 
   useEffect(() => {
     if (isAccountOpen && user?.email) {
-      fetchUserOrders();
+      // 1. Initial load (shows the spinner)
+      fetchUserOrders(true);
 
-      // Real-time polling to keep the collector profile and active curation status perfectly synchronized
+      // 2. Set up a background polling interval (every 4 seconds)
       const interval = setInterval(() => {
-        fetchUserOrders();
+        fetchUserOrders(false); // Pass 'false' so it doesn't trigger the spinner!
       }, 4000);
 
+      // 3. Clean up the interval when the component unmounts
       return () => clearInterval(interval);
     }
   }, [isAccountOpen, user?.email]);
 
-  const latestActiveOrder = orders.find(o => o.status !== "Delivered") || orders[0];
-  const statusInfo = latestActiveOrder ? getStatusProgress(latestActiveOrder.status) : null;
+  // Get ALL orders that are not yet delivered
+  const activeOrders = orders.filter(o => o.status !== "Delivered");
 
   return (
     <AnimatePresence>
@@ -504,56 +509,63 @@ export default function AccountDrawer() {
                   {/* Tab Panel switcher */}
                   {activeTab === "profile" ? (
                     <div className="space-y-4">
-                      {/* Active Custom Order status */}
-                      {latestActiveOrder ? (
-                        <div className="bg-white p-5 rounded-[2px] border border-brand-sand/65 shadow-xs space-y-4">
-                          <div className="flex justify-between items-center border-b border-brand-sand/30 pb-2">
-                            <span className="text-[10px] uppercase font-bold tracking-widest text-[#C9A76A] flex items-center gap-1.5">
-                              <Loader className="w-3.5 h-3.5 animate-spin text-[#C9A76A]" />
-                              <span>Active Curation status</span>
-                            </span>
-                            <span className="text-[9px] bg-brand-forest/10 text-brand-forest font-bold px-2 py-0.5 rounded-[2px]">
-                              Order #{latestActiveOrder.id}
-                            </span>
-                          </div>
-                          
-                          <div className="space-y-1">
-                            <h5 className="font-serif text-xs sm:text-sm font-normal text-[#1A1A1A]">
-                              {latestActiveOrder.cart && latestActiveOrder.cart[0] 
-                                ? latestActiveOrder.cart[0].product?.name || "Custom Piece"
-                                : "Custom Resin Curation"}
-                              {latestActiveOrder.cart && latestActiveOrder.cart.length > 1 && ` (+${latestActiveOrder.cart.length - 1} more items)`}
-                            </h5>
-                            <span className="text-[10px] text-[#5A5A5A] block leading-relaxed mt-1">
-                              {statusInfo?.desc}
-                            </span>
-                          </div>
+                      {/* Active Custom Order status - Maps over ALL active orders */}
+                      {activeOrders.length > 0 ? (
+                        <div className="space-y-4">
+                          {activeOrders.map((latestActiveOrder) => {
+                            const statusInfo = getStatusProgress(latestActiveOrder.status);
+                            return (
+                              <div key={latestActiveOrder.id} className="bg-white p-5 rounded-[2px] border border-brand-sand/65 shadow-xs space-y-4">
+                                <div className="flex justify-between items-center border-b border-brand-sand/30 pb-2">
+                                  <span className="text-[10px] uppercase font-bold tracking-widest text-[#C9A76A] flex items-center gap-1.5">
+                                    <Loader className="w-3.5 h-3.5 animate-spin text-[#C9A76A]" />
+                                    <span>Active Curation status</span>
+                                  </span>
+                                  <span className="text-[9px] bg-brand-forest/10 text-brand-forest font-bold px-2 py-0.5 rounded-[2px]">
+                                    Order #{latestActiveOrder.id}
+                                  </span>
+                                </div>
+                                
+                                <div className="space-y-1">
+                                  <h5 className="font-serif text-xs sm:text-sm font-normal text-[#1A1A1A]">
+                                    {latestActiveOrder.cart && latestActiveOrder.cart[0] 
+                                      ? latestActiveOrder.cart[0].product?.name || "Custom Piece"
+                                      : "Custom Resin Curation"}
+                                    {latestActiveOrder.cart && latestActiveOrder.cart.length > 1 && ` (+${latestActiveOrder.cart.length - 1} more items)`}
+                                  </h5>
+                                  <span className="text-[10px] text-[#5A5A5A] block leading-relaxed mt-1">
+                                    {statusInfo?.desc}
+                                  </span>
+                                </div>
 
-                          {/* Progress visual tracker */}
-                          <div className="space-y-2 pt-1">
-                            <div className="flex justify-between text-[10px] font-bold text-[#1A1A1A]/70">
-                              <span>Stage: {latestActiveOrder.status}</span>
-                              <span className="text-[#C9A76A]">{statusInfo?.percent}%</span>
-                            </div>
-                            <div className="relative w-full bg-[#FAF8F5] rounded-[2px] h-2 overflow-hidden border border-brand-sand/60">
-                              <div className="bg-brand-gold h-full rounded-[2px] transition-all duration-500" style={{ width: `${statusInfo?.percent}%` }} />
-                            </div>
-                            
-                            {/* Staged Indicators */}
-                            <div className="grid grid-cols-4 gap-1 text-[8px] font-bold text-[#5A5A5A]/60 uppercase tracking-wider text-center pt-1">
-                              <span className={statusInfo?.step && statusInfo.step >= 1 ? "text-brand-forest font-bold" : ""}>Curation</span>
-                              <span className={statusInfo?.step && statusInfo.step >= 3 ? "text-brand-forest font-bold" : statusInfo?.step === 2 ? "text-brand-gold animate-pulse font-bold" : ""}>Pouring</span>
-                              <span className={statusInfo?.step && statusInfo.step >= 5 ? "text-brand-forest font-bold" : statusInfo?.step === 4 ? "text-brand-gold animate-pulse font-bold" : ""}>Curing</span>
-                              <span className={statusInfo?.step && statusInfo.step >= 6 ? "text-brand-forest font-bold" : ""}>Delivered</span>
-                            </div>
-                          </div>
+                                {/* Progress visual tracker */}
+                                <div className="space-y-2 pt-1">
+                                  <div className="flex justify-between text-[10px] font-bold text-[#1A1A1A]/70">
+                                    <span>Stage: {latestActiveOrder.status}</span>
+                                    <span className="text-[#C9A76A]">{statusInfo?.percent}%</span>
+                                  </div>
+                                  <div className="relative w-full bg-[#FAF8F5] rounded-[2px] h-2 overflow-hidden border border-brand-sand/60">
+                                    <div className="bg-brand-gold h-full rounded-[2px] transition-all duration-500" style={{ width: `${statusInfo?.percent}%` }} />
+                                  </div>
+                                  
+                                  {/* Staged Indicators */}
+                                  <div className="grid grid-cols-4 gap-1 text-[8px] font-bold text-[#5A5A5A]/60 uppercase tracking-wider text-center pt-1">
+                                    <span className={statusInfo?.step && statusInfo.step >= 1 ? "text-brand-forest font-bold" : ""}>Curation</span>
+                                    <span className={statusInfo?.step && statusInfo.step >= 3 ? "text-brand-forest font-bold" : statusInfo?.step === 2 ? "text-brand-gold animate-pulse font-bold" : ""}>Pouring</span>
+                                    <span className={statusInfo?.step && statusInfo.step >= 5 ? "text-brand-forest font-bold" : statusInfo?.step === 4 ? "text-brand-gold animate-pulse font-bold" : ""}>Curing</span>
+                                    <span className={statusInfo?.step && statusInfo.step >= 6 ? "text-brand-forest font-bold" : ""}>Delivered</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          })}
                         </div>
                       ) : (
                         <div className="bg-white p-6 rounded-[2px] border border-brand-sand/65 shadow-xs text-center space-y-3">
                           <Compass className="w-8 h-8 text-[#C9A76A]/40 mx-auto" />
-                          <h5 className="font-serif text-sm font-normal text-brand-forest">No Custom Curations Yet</h5>
+                          <h5 className="font-serif text-sm font-normal text-brand-forest">No Active Curations</h5>
                           <p className="text-[11px] text-[#5A5A5A] leading-relaxed max-w-xs mx-auto">
-                            Design a bespoke live-edge clock, botanical geode coasters, or river board to begin your artistic journey.
+                            Your active commissions will display here. Check the Acquisitions tab to view your completed gallery pieces.
                           </p>
                         </div>
                       )}
