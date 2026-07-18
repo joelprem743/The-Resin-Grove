@@ -17,8 +17,11 @@ import {
   Lock, 
   ArrowRight,
   Sparkles,
-  Info
+  Info,
+  CreditCard
 } from "lucide-react";
+
+const STUDIO_UPI_ID = import.meta.env.VITE_STUDIO_UPI_ID || "6305472006@axl";
 
 export default function AccountDrawer() {
   const { 
@@ -556,6 +559,17 @@ export default function AccountDrawer() {
                                     <span className={statusInfo?.step && statusInfo.step >= 6 ? "text-brand-forest font-bold" : ""}>Delivered</span>
                                   </div>
                                 </div>
+
+                                {/* Pay Now Button for Active Orders */}
+                                {latestActiveOrder.status === "Curation Requested" && (
+                                  <a 
+                                    href={`upi://pay?pa=${STUDIO_UPI_ID}&pn=TheResinGrove&am=${Number(latestActiveOrder.grandTotal).toFixed(2)}&cu=INR&tn=Order ${latestActiveOrder.id}`}
+                                    className="mt-2 w-full py-2.5 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white rounded-[2px] text-[10px] font-bold uppercase tracking-[1px] transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                                  >
+                                    <CreditCard className="w-3.5 h-3.5" />
+                                    Pay ₹{Number(latestActiveOrder.grandTotal).toFixed(2)} via UPI
+                                  </a>
+                                )}
                               </div>
                             )
                           })}
@@ -643,6 +657,17 @@ export default function AccountDrawer() {
                                 {ord.status}
                               </span>
                             </div>
+
+                            {/* Pay Now Button for History Orders */}
+                            {ord.status === "Curation Requested" && (
+                              <a 
+                                href={`upi://pay?pa=${STUDIO_UPI_ID}&pn=TheResinGrove&am=${Number(ord.grandTotal).toFixed(2)}&cu=INR&tn=Order ${ord.id}`}
+                                className="mt-3 w-full py-2.5 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white rounded-[2px] text-[10px] font-bold uppercase tracking-[1px] transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                              >
+                                <CreditCard className="w-3.5 h-3.5" />
+                                Pay ₹{Number(ord.grandTotal).toFixed(2)} via UPI
+                              </a>
+                            )}
                           </div>
                         ))
                       )}
@@ -680,4 +705,3 @@ export default function AccountDrawer() {
     </AnimatePresence>
   );
 }
-
