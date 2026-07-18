@@ -15,9 +15,9 @@ import {
   Loader2
 } from "lucide-react";
 import { uploadCustomPhoto, isSupabaseConfigured } from "../lib/supabase";
+import { CartItem } from "../types";
 
 const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || "joelpremtej@gmail.com";
-const STUDIO_UPI_ID = import.meta.env.VITE_STUDIO_UPI_ID || "6305472006@axl";
 
 export default function CartDrawer() {
   const { 
@@ -58,31 +58,60 @@ export default function CartDrawer() {
     }
   }, [user]);
 
+  // Deduplicate cart items right before rendering to prevent React key warnings
+  // and merge quantities of identical configurations.
+  const safeCart = useMemo(() => {
+    const seen = new Set();
+    const deduped: CartItem[] = [];
+    
+    for (const item of cart) {
+      const dStr = item.selectedDeco ? [...item.selectedDeco].sort().join(",") : "";
+      const key = `${item.product.id}-${item.selectedWood || "none"}-${item.selectedResinColor || "none"}-${dStr}-${item.personalizationText || "none"}`;
+      
+      if (!seen.has(key)) {
+        seen.add(key);
+        deduped.push(item);
+      } else {
+        // If duplicate found, merge quantity into the already added item
+        const existing = deduped.find((i) => {
+          const exDStr = i.selectedDeco ? [...i.selectedDeco].sort().join(",") : "";
+          const exKey = `${i.product.id}-${i.selectedWood || "none"}-${i.selectedResinColor || "none"}-${exDStr}-${i.personalizationText || "none"}`;
+          return exKey === key;
+        });
+        if (existing) {
+          existing.quantity += item.quantity;
+        }
+      }
+    }
+    return deduped;
+  }, [cart]);
+
   // Key generator helper for item options
   const getConfigKey = (
+    productId: string,
     wood?: string,
     color?: string,
     deco?: string[],
     text?: string
   ) => {
     const dStr = deco ? [...deco].sort().join(",") : "";
-    return `${wood || "none"}-${color || "none"}-${dStr}-${text || "none"}`;
+    return `${productId}-${wood || "none"}-${color || "none"}-${dStr}-${text || "none"}`;
   };
 
   // Compute Subtotal
   const subtotal = useMemo(() => {
-    return cart.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
-  }, [cart]);
+    return safeCart.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
+  }, [safeCart]);
 
   // Compute Total Savings
   const totalSavings = useMemo(() => {
-    return cart.reduce((acc, item) => {
+    return safeCart.reduce((acc, item) => {
       if (item.product.originalPrice) {
         return acc + (item.product.originalPrice - item.product.price) * item.quantity;
       }
       return acc;
     }, 0);
-  }, [cart]);
+  }, [safeCart]);
 
   // Compute Shipping
   const shippingFee = useMemo(() => {
@@ -96,7 +125,7 @@ export default function CartDrawer() {
   }, [subtotal, shippingFee]);
 
   const handleStartCheckout = () => {
-    if (cart.length === 0) return;
+    if (safeCart.length === 0) return;
     if (!user) {
       showToast("Authentication Required", "Please log in or register to place your custom order!");
       setCartOpen(false);
@@ -135,7 +164,6 @@ export default function CartDrawer() {
       return;
     }
 
-    // Force shipping details to match the logged-in user session email exactly to prevent mismatches
     const finalShippingDetails = {
       ...shippingDetails,
       email: user.email,
@@ -157,15 +185,13 @@ export default function CartDrawer() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         shippingDetails: finalShippingDetails,
-        cart,
+        cart: safeCart, // Send cleaned cart
         grandTotal
       })
     })
     .then(async (res) => {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        // Surface the real backend error (e.g. Supabase write failure) instead of
-        // silently pretending the order succeeded.
         const message = data?.error || `Order submission failed (status ${res.status}).`;
         throw new Error(message);
       }
@@ -178,7 +204,6 @@ export default function CartDrawer() {
       if (data && data.previewUrl) {
         setCreatedOrderPreviewUrl(data.previewUrl);
       }
-      // Only clear the cart and show success once the order is confirmed saved.
       clearCart();
       setTimeout(() => {
         setCheckoutStep("success");
@@ -186,8 +211,6 @@ export default function CartDrawer() {
     })
     .catch((err) => {
       console.error("API Order error:", err);
-      // Do NOT clear the cart and do NOT show success — the order was not saved.
-      // Let the customer retry instead of thinking their order went through.
       setCheckoutError(
         err?.message || "We couldn't save your order right now. Please try again in a moment."
       );
@@ -197,10 +220,10 @@ export default function CartDrawer() {
 
   // Automatically reset checkout state if items are in the cart
   useEffect(() => {
-    if (cart.length > 0 && checkoutStep === "success") {
+    if (safeCart.length > 0 && checkoutStep === "success") {
       setCheckoutStep("idle");
     }
-  }, [cart.length, checkoutStep]);
+  }, [safeCart.length, checkoutStep]);
 
   const handleCompleteOrder = () => {
     clearCart();
@@ -258,7 +281,7 @@ export default function CartDrawer() {
             <div className="flex-grow overflow-y-auto p-6 space-y-6">
               {checkoutStep === "idle" && (
                 <>
-                  {cart.length === 0 ? (
+                  {safeCart.length === 0 ? (
                     <div className="text-center py-20 space-y-4">
                       <div className="w-16 h-16 bg-[#FAF8F5] border border-[#C9A76A]/20 text-[#C9A76A] rounded-[2px] flex items-center justify-center mx-auto">
                         <ShoppingBag className="w-7 h-7" />
@@ -271,13 +294,14 @@ export default function CartDrawer() {
                         onClick={() => setCartOpen(false)}
                         className="px-6 py-2.5 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white rounded-[2px] text-xs font-semibold cursor-pointer"
                       >
-                        Start Curation
+                        Start Shopping
                       </button>
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {cart.map((item, idx) => {
+                      {safeCart.map((item) => {
                         const itemConfigId = getConfigKey(
+                          item.product.id,
                           item.selectedWood,
                           item.selectedResinColor,
                           item.selectedDeco,
@@ -285,7 +309,7 @@ export default function CartDrawer() {
                         );
                         return (
                           <div 
-                            key={`${item.product.id}-${itemConfigId}`} 
+                            key={itemConfigId} 
                             className="bg-white p-4 rounded-[2px] border border-brand-sand/40 shadow-xs flex gap-4 items-start"
                           >
                             {/* Product Thumb */}
@@ -472,14 +496,14 @@ export default function CartDrawer() {
                     />
                   </div>
 
-                  {/* Offline Payment Information */}
+                  {/* Studio Coordination Information */}
                   <div className="border border-brand-sand/50 p-4 rounded-[2px] bg-[#FAF8F5] space-y-2">
                     <span className="text-[9px] uppercase tracking-wider font-bold text-[#C9A76A] flex items-center gap-1">
                       <Mail className="w-3.5 h-3.5" />
                       <span>Direct Studio Email Coordination</span>
                     </span>
                     <p className="text-[10px] text-[#5A5A5A] leading-relaxed">
-                      Your complete curation request and contact details will be compiled and sent to our curation team at <strong className="text-[#C9A76A] font-bold">{ADMIN_EMAIL}</strong>. We will then reach out to you directly to arrange payment details (e.g. UPI, Bank Transfer, or Invoice) and share progress.
+                      Your complete curation request and contact details will be compiled and sent to our curation team at <strong className="text-[#C9A76A] font-bold">{ADMIN_EMAIL}</strong>. We will then reach out to you directly to coordinate the next steps and share progress.
                     </p>
                   </div>
 
@@ -564,48 +588,7 @@ export default function CartDrawer() {
                     </p>
                   </div>
 
-
-<div className="space-y-3 max-w-xs mx-auto">
-                    {/* UPI Payment Section with QR Code */}
-                    <div className="bg-[#FAF8F5] p-4 rounded-[4px] border border-brand-sand/40 space-y-3 text-center">
-                      <span className="text-[10px] uppercase tracking-wider font-bold text-[#5A5A5A] block">Pay ₹{(orderTotal || grandTotal).toFixed(2)} via UPI</span>
-                      
-                      {/* QR Code for Desktop scanning */}
-                      <div className="flex justify-center">
-                        <img 
-                          src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`upi://pay?pa=${STUDIO_UPI_ID}&pn=TheResinGrove&am=${(orderTotal || grandTotal).toFixed(2)}&cu=INR&tn=Order ${createdOrderId || ""}`)}`} 
-                          alt="UPI QR Code" 
-                          className="w-32 h-32 border border-white rounded-[2px] shadow-sm bg-white p-1"
-                        />
-                      </div>
-                      
-                      <p className="text-[9px] text-[#5A5A5A] leading-relaxed">
-                        Scan this QR code with any UPI app (GPay, PhonePe, Paytm) to pay instantly.
-                      </p>
-
-                      {/* Mobile Deep Link Button (Only shows on mobile devices) */}
-                      <a
-                        href={`upi://pay?pa=${STUDIO_UPI_ID}&pn=TheResinGrove&am=${(orderTotal || grandTotal).toFixed(2)}&cu=INR&tn=Order ${createdOrderId || ""}`}
-                        className="block w-full py-2.5 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white rounded-[2px] text-[10px] font-bold uppercase tracking-[1px] transition-colors md:hidden"
-                      >
-                        Open UPI App
-                      </a>
-
-                      {/* Manual UPI ID Copy */}
-                      <div className="pt-2 border-t border-brand-sand/30">
-                        <span className="text-[10px] text-[#5A5A5A] block mb-1">Or copy UPI ID:</span>
-                        <button 
-                          onClick={() => {
-                            navigator.clipboard.writeText(STUDIO_UPI_ID);
-                            showToast("UPI ID Copied", "You can paste it in your UPI app now!");
-                          }}
-                          className="font-bold text-brand-gold underline text-xs"
-                        >
-                          {STUDIO_UPI_ID}
-                        </button>
-                      </div>
-                    </div>
-
+                  <div className="max-w-xs mx-auto w-full pt-2">
                     {/* Copy Receipt */}
                     <button
                       onClick={() => {
@@ -643,7 +626,7 @@ export default function CartDrawer() {
             </div>
 
             {/* Shopping Bag Summary / Footer (Only shown in initial shop step) */}
-            {checkoutStep === "idle" && cart.length > 0 && (
+            {checkoutStep === "idle" && safeCart.length > 0 && (
               <div className="border-t border-brand-sand/55 p-6 space-y-4 bg-white">
                 
                 {/* Totals Breakdown */}

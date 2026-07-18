@@ -46,12 +46,32 @@ interface ShopContextType {
 
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
 
+// Deduplicates a cart array safely without mutating objects
+const deduplicateCart = (cartItems: CartItem[]): CartItem[] => {
+  const map = new Map<string, CartItem>();
+  for (const item of cartItems) {
+    const dStr = item.selectedDeco ? [...item.selectedDeco].sort().join(",") : "";
+    const key = `${item.product.id}-${item.selectedWood || "none"}-${item.selectedResinColor || "none"}-${dStr}-${item.personalizationText || "none"}`;
+    
+    if (map.has(key)) {
+      const existing = map.get(key)!;
+      // Create a new object to prevent mutating the original state
+      map.set(key, { ...existing, quantity: existing.quantity + item.quantity });
+    } else {
+      map.set(key, { ...item });
+    }
+  }
+  return Array.from(map.values());
+};
+
 export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [cart, setCart] = useState<CartItem[]>(() => {
     const savedCart = localStorage.getItem("resingrove_cart");
     if (savedCart) {
       try {
-        return JSON.parse(savedCart);
+        const parsedCart: CartItem[] = JSON.parse(savedCart);
+        // Clean up any duplicate items that might have been saved previously
+        return deduplicateCart(parsedCart);
       } catch (e) {
         console.error("Failed to parse saved cart", e);
       }
@@ -148,8 +168,6 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [supabaseReady]);
 
   // Load cart from Supabase when user logs in
-  // Load cart from Supabase when user logs in
-  // Load cart from Supabase when user logs in
   useEffect(() => {
     const loadUserCart = async () => {
       if (!user || user.isMock) return;
@@ -168,17 +186,14 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           // 2. Merge with local cart (preserves custom items, avoids doubling quantities)
           setCart((prevLocalCart) => {
-            // Start with the DB items as the source of truth
             const mergedCart = [...dbStandardItems];
             
             prevLocalCart.forEach((localItem) => {
               const isCustom = !!localItem.selectedWood || !!localItem.selectedResinColor;
               
               if (isCustom) {
-                // Always keep custom items from local storage (they aren't in Supabase)
                 mergedCart.push(localItem);
               } else {
-                // For standard items, only add to merged cart if it's NOT already in the DB cart
                 const existsInDb = dbStandardItems.some(
                   (dbItem) => dbItem.product.id === localItem.product.id
                 );
@@ -186,11 +201,10 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 if (!existsInDb) {
                   mergedCart.push(localItem);
                 }
-                // If it exists in DB, we intentionally skip it so we don't double the quantity!
               }
             });
             
-            return mergedCart;
+            return deduplicateCart(mergedCart);
           });
 
           if (dbStandardItems.length > 0) {
@@ -217,13 +231,11 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const dbItems = await loadWishlistFromSupabase(user.id);
           
-          // 1. Map DB items to Product format
           const dbWishlist: Product[] = (dbItems || []).map((dbItem) => {
             const product = PRODUCTS.find((p) => p.id === dbItem.product_id);
             return product;
           }).filter((p): p is Product => Boolean(p));
   
-          // 2. Merge with local wishlist
           setWishlist((prevLocalWishlist) => {
             const mergedWishlist = [...dbWishlist];
             
@@ -232,7 +244,6 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 (dbItem) => dbItem.id === localItem.id
               );
               
-              // Only add local items if they aren't already in the DB wishlist
               if (!existsInDb) {
                 mergedWishlist.push(localItem);
               }
@@ -250,36 +261,6 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
     loadUserWishlist();
   }, [user]);
-
-    // Load wishlist from Supabase when user logs in
-  // Load wishlist from Supabase when user logs in
-  useEffect(() => {
-    const loadUserWishlist = async () => {
-      if (!user || user.isMock) return;
-      
-      if (isSupabaseConfigured && supabase) {
-        setIsSyncingWishlist(true);
-        try {
-          const dbItems = await loadWishlistFromSupabase(user.id);
-          if (dbItems && dbItems.length > 0) {
-            // Use a type guard to filter out undefined safely
-            const loadedWishlist = dbItems.map((dbItem) => {
-              return PRODUCTS.find((p) => p.id === dbItem.product_id);
-            }).filter((p): p is Product => Boolean(p));
-  
-            setWishlist(loadedWishlist);
-          }
-        } catch (err) {
-          console.error("Failed to load wishlist from Supabase:", err);
-        } finally {
-          setIsSyncingWishlist(false);
-        }
-      }
-    };
-  
-    loadUserWishlist();
-  }, [user]);
-
 
   // Save cart to localStorage on changes & sync to Supabase
   useEffect(() => {
@@ -300,7 +281,6 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => clearTimeout(timer);
   }, [cart, user, isSyncingCart]);
 
-  // Save wishlist to localStorage on changes
   // Save wishlist to localStorage on changes & sync to Supabase
   useEffect(() => {
     localStorage.setItem("resingrove_wishlist", JSON.stringify(wishlist));
@@ -322,13 +302,14 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Helper to generate a unique key for custom configurations
   const getConfigKey = (
+    productId: string,
     wood?: string,
     color?: string,
     deco?: string[],
     text?: string
   ) => {
     const dStr = deco ? [...deco].sort().join(",") : "";
-    return `${wood || "none"}-${color || "none"}-${dStr}-${text || "none"}`;
+    return `${productId}-${wood || "none"}-${color || "none"}-${dStr}-${text || "none"}`;
   };
 
   const addToCart = (
@@ -340,37 +321,41 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     personalizationText?: string
   ) => {
     setCart((prevCart) => {
+      const newCart = [...prevCart];
+      
       // Find if this exact product with exact configuration already exists in cart
-      const existingIndex = prevCart.findIndex((item) => {
+      const existingIndex = newCart.findIndex((item) => {
         if (item.product.id !== product.id) return false;
+        
+        const itemDeco = item.selectedDeco ? [...item.selectedDeco].sort().join(",") : "";
+        const newDeco = selectedDeco ? [...selectedDeco].sort().join(",") : "";
+
         return (
-          item.selectedWood === selectedWood &&
-          item.selectedResinColor === selectedResinColor &&
-          JSON.stringify(item.selectedDeco) === JSON.stringify(selectedDeco) &&
-          item.personalizationText === personalizationText
+          (item.selectedWood || "") === (selectedWood || "") &&
+          (item.selectedResinColor || "") === (selectedResinColor || "") &&
+          itemDeco === newDeco &&
+          (item.personalizationText || "") === (personalizationText || "")
         );
       });
 
       if (existingIndex > -1) {
-        const newCart = [...prevCart];
+        // Create a new object to prevent mutating the original state
         newCart[existingIndex] = {
           ...newCart[existingIndex],
           quantity: newCart[existingIndex].quantity + quantity,
         };
-        return newCart;
       } else {
-        return [
-          ...prevCart,
-          {
-            product,
-            quantity,
-            selectedWood,
-            selectedResinColor,
-            selectedDeco,
-            personalizationText,
-          },
-        ];
+        newCart.push({
+          product,
+          quantity,
+          selectedWood,
+          selectedResinColor,
+          selectedDeco,
+          personalizationText,
+        });
       }
+      
+      return deduplicateCart(newCart);
     });
     showToast("Added to Cart Successfully!", product.name);
   };
@@ -379,6 +364,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCart((prevCart) =>
       prevCart.filter((item) => {
         const itemConfigId = getConfigKey(
+          item.product.id,
           item.selectedWood,
           item.selectedResinColor,
           item.selectedDeco,
@@ -397,6 +383,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCart((prevCart) =>
       prevCart.map((item) => {
         const itemConfigId = getConfigKey(
+          item.product.id,
           item.selectedWood,
           item.selectedResinColor,
           item.selectedDeco,
@@ -414,6 +401,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCart((prevCart) =>
       prevCart.map((item) => {
         const itemConfigId = getConfigKey(
+          item.product.id,
           item.selectedWood,
           item.selectedResinColor,
           item.selectedDeco,

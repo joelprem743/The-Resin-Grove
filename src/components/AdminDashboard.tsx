@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useShop } from "../context/ShopContext";
 import { 
@@ -50,6 +50,10 @@ export default function AdminDashboard() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [resetConfirm, setResetConfirm] = useState(false);
 
+  // Track in-flight status updates to prevent polling from overwriting optimistic state
+  const pendingUpdates = useRef<Set<string>>(new Set());
+
+  // Fetch admin data
   // Fetch admin data
   const fetchData = async () => {
     setLoading(true);
@@ -59,7 +63,21 @@ export default function AdminDashboard() {
         const inqRes = await fetch("/api/admin/inquiries");
         if (inqRes.ok) {
           const inqData = await inqRes.ok ? await inqRes.json() : [];
-          setInquiries(inqData);
+          
+          setInquiries(prev => {
+            // If there are no pending updates, just use the fresh data
+            if (pendingUpdates.current.size === 0) return inqData;
+            
+            // If there ARE pending updates, preserve the optimistic state 
+            // so a late-arriving fetch doesn't revert the UI
+            return inqData.map((item: any) => {
+              const localOptimistic = prev.find(p => p.id === item.id);
+              if (localOptimistic && pendingUpdates.current.has(item.id)) {
+                return localOptimistic; 
+              }
+              return item;
+            });
+          });
         }
       } catch (err) {
         console.error("Error fetching inquiries:", err);
@@ -70,7 +88,18 @@ export default function AdminDashboard() {
         const ordRes = await fetch("/api/admin/orders");
         if (ordRes.ok) {
           const ordData = await ordRes.ok ? await ordRes.json() : [];
-          setOrders(ordData);
+          
+          setOrders(prev => {
+            if (pendingUpdates.current.size === 0) return ordData;
+            
+            return ordData.map((item: any) => {
+              const localOptimistic = prev.find(p => p.id === item.id);
+              if (localOptimistic && pendingUpdates.current.has(item.id)) {
+                return localOptimistic;
+              }
+              return item;
+            });
+          });
         }
       } catch (err) {
         console.error("Error fetching orders:", err);
@@ -88,7 +117,10 @@ export default function AdminDashboard() {
 
       // Real-time polling to keep the admin dashboard inquiries and orders perfectly updated
       const interval = setInterval(() => {
-        fetchData();
+        // Skip polling if an update is currently saving to prevent clobbering the UI
+        if (pendingUpdates.current.size === 0) {
+          fetchData();
+        }
       }, 5000);
 
       return () => clearInterval(interval);
@@ -110,42 +142,77 @@ export default function AdminDashboard() {
     setAuthError("");
   };
 
-  // Update status handlers
   const handleUpdateInquiryStatus = async (id: string, newStatus: string) => {
+    pendingUpdates.current.add(id);
+    const oldStatus = inquiries.find(i => i.id === id)?.status;
+
+    // Optimistically update UI immediately
+    setInquiries(prev => prev.map(i => i.id === id ? { ...i, status: newStatus } : i));
+    if (selectedItem && selectedItem.id === id) {
+      setSelectedItem(prev => ({ ...prev, status: newStatus }));
+    }
+
     try {
       const res = await fetch("/api/admin/update-inquiry-status", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, status: newStatus })
       });
-      if (res.ok) {
-        setInquiries(prev => prev.map(i => i.id === id ? { ...i, status: newStatus } : i));
-        if (selectedItem && selectedItem.id === id) {
-          setSelectedItem(prev => ({ ...prev, status: newStatus }));
-        }
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        showToast("Update Failed", errData.error || "Server error prevented update.");
+        // Rollback UI on failure
+        setInquiries(prev => prev.map(i => i.id === id ? { ...i, status: oldStatus } : i));
+        if (selectedItem && selectedItem.id === id) setSelectedItem(prev => ({ ...prev, status: oldStatus }));
+      } else {
         showToast("Status Updated", `Inquiry ${id} set to ${newStatus}`);
       }
     } catch (err) {
       console.error(err);
+      showToast("Network Error", "Could not reach server to update status.");
+      // Rollback UI on network error
+      setInquiries(prev => prev.map(i => i.id === id ? { ...i, status: oldStatus } : i));
+      if (selectedItem && selectedItem.id === id) setSelectedItem(prev => ({ ...prev, status: oldStatus }));
+    } finally {
+      setTimeout(() => pendingUpdates.current.delete(id), 2000);
     }
   };
 
   const handleUpdateOrderStatus = async (id: string, newStatus: string) => {
+    pendingUpdates.current.add(id);
+    const oldStatus = orders.find(o => o.id === id)?.status;
+
+    // Optimistically update UI immediately
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
+    if (selectedItem && selectedItem.id === id) {
+      setSelectedItem(prev => ({ ...prev, status: newStatus }));
+    }
+
     try {
       const res = await fetch("/api/admin/update-order-status", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, status: newStatus })
       });
-      if (res.ok) {
-        setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
-        if (selectedItem && selectedItem.id === id) {
-          setSelectedItem(prev => ({ ...prev, status: newStatus }));
-        }
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        showToast("Update Failed", errData.error || "Server error prevented update.");
+        // Rollback UI on failure
+        setOrders(prev => prev.map(o => o.id === id ? { ...o, status: oldStatus } : o));
+        if (selectedItem && selectedItem.id === id) setSelectedItem(prev => ({ ...prev, status: oldStatus }));
+      } else {
         showToast("Order Updated", `Order ${id} set to ${newStatus}`);
       }
     } catch (err) {
       console.error(err);
+      showToast("Network Error", "Could not reach server to update status.");
+      // Rollback UI on network error
+      setOrders(prev => prev.map(o => o.id === id ? { ...o, status: oldStatus } : o));
+      if (selectedItem && selectedItem.id === id) setSelectedItem(prev => ({ ...prev, status: oldStatus }));
+    } finally {
+      setTimeout(() => pendingUpdates.current.delete(id), 2000);
     }
   };
 

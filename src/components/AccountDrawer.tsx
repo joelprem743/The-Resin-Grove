@@ -158,6 +158,9 @@ export default function AccountDrawer() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
 
+  // Detect if the user is on a mobile device to show the UPI app link vs QR code
+  const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
   const getStatusProgress = (status: string) => {
     switch (status) {
       case "Curation Requested":
@@ -561,14 +564,27 @@ export default function AccountDrawer() {
                                 </div>
 
                                 {/* Pay Now Button for Active Orders */}
+                                {/* Pay Now Button for Active Orders */}
                                 {latestActiveOrder.status === "Curation Requested" && (
-                                  <a 
-                                    href={`upi://pay?pa=${STUDIO_UPI_ID}&pn=TheResinGrove&am=${Number(latestActiveOrder.grandTotal).toFixed(2)}&cu=INR&tn=Order ${latestActiveOrder.id}`}
-                                    className="mt-2 w-full py-2.5 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white rounded-[2px] text-[10px] font-bold uppercase tracking-[1px] transition-colors flex items-center justify-center gap-2 cursor-pointer"
-                                  >
-                                    <CreditCard className="w-3.5 h-3.5" />
-                                    Pay ₹{Number(latestActiveOrder.grandTotal).toFixed(2)} via UPI
-                                  </a>
+                                  isMobile ? (
+                                    <a 
+                                      href={`upi://pay?pa=${STUDIO_UPI_ID}&pn=TheResinGrove&am=${Number(latestActiveOrder.grandTotal).toFixed(2)}&cu=INR&tn=Order ${latestActiveOrder.id}`}
+                                      className="mt-2 w-full py-2.5 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white rounded-[2px] text-[10px] font-bold uppercase tracking-[1px] transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                                    >
+                                      <CreditCard className="w-3.5 h-3.5" />
+                                      Pay ₹{Number(latestActiveOrder.grandTotal).toFixed(2)} via UPI
+                                    </a>
+                                  ) : (
+                                    <div className="mt-2 pt-3 border-t border-brand-sand/30 flex flex-col items-center gap-2">
+                                      <span className="text-[10px] uppercase font-bold text-[#5A5A5A] tracking-wider">Scan to Pay ₹{Number(latestActiveOrder.grandTotal).toFixed(2)}</span>
+                                      <img 
+                                        src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`upi://pay?pa=${STUDIO_UPI_ID}&pn=TheResinGrove&am=${Number(latestActiveOrder.grandTotal).toFixed(2)}&cu=INR&tn=Order ${latestActiveOrder.id}`)}`} 
+                                        alt="UPI QR Code" 
+                                        className="w-32 h-32 border border-brand-sand rounded-[2px] bg-white p-1"
+                                      />
+                                      <p className="text-[9px] text-[#5A5A5A]">Or copy UPI ID: <button onClick={() => { navigator.clipboard.writeText(STUDIO_UPI_ID); showToast("Copied!", "UPI ID copied to clipboard."); }} className="font-bold text-brand-gold underline">{STUDIO_UPI_ID}</button></p>
+                                    </div>
+                                  )
                                 )}
                               </div>
                             )
@@ -659,14 +675,27 @@ export default function AccountDrawer() {
                             </div>
 
                             {/* Pay Now Button for History Orders */}
+                            {/* Pay Now Button for History Orders */}
                             {ord.status === "Curation Requested" && (
-                              <a 
-                                href={`upi://pay?pa=${STUDIO_UPI_ID}&pn=TheResinGrove&am=${Number(ord.grandTotal).toFixed(2)}&cu=INR&tn=Order ${ord.id}`}
-                                className="mt-3 w-full py-2.5 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white rounded-[2px] text-[10px] font-bold uppercase tracking-[1px] transition-colors flex items-center justify-center gap-2 cursor-pointer"
-                              >
-                                <CreditCard className="w-3.5 h-3.5" />
-                                Pay ₹{Number(ord.grandTotal).toFixed(2)} via UPI
-                              </a>
+                              isMobile ? (
+                                <a 
+                                  href={`upi://pay?pa=${STUDIO_UPI_ID}&pn=TheResinGrove&am=${Number(ord.grandTotal).toFixed(2)}&cu=INR&tn=Order ${ord.id}`}
+                                  className="mt-3 w-full py-2.5 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white rounded-[2px] text-[10px] font-bold uppercase tracking-[1px] transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                                >
+                                  <CreditCard className="w-3.5 h-3.5" />
+                                  Pay ₹{Number(ord.grandTotal).toFixed(2)} via UPI
+                                </a>
+                              ) : (
+                                <div className="mt-3 pt-3 border-t border-brand-sand/30 flex flex-col items-center gap-2">
+                                  <span className="text-[10px] uppercase font-bold text-[#5A5A5A] tracking-wider">Scan to Pay ₹{Number(ord.grandTotal).toFixed(2)}</span>
+                                  <img 
+                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`upi://pay?pa=${STUDIO_UPI_ID}&pn=TheResinGrove&am=${Number(ord.grandTotal).toFixed(2)}&cu=INR&tn=Order ${ord.id}`)}`} 
+                                    alt="UPI QR Code" 
+                                    className="w-32 h-32 border border-brand-sand rounded-[2px] bg-white p-1"
+                                  />
+                                  <p className="text-[9px] text-[#5A5A5A]">Or copy UPI ID: <button onClick={() => { navigator.clipboard.writeText(STUDIO_UPI_ID); showToast("Copied!", "UPI ID copied to clipboard."); }} className="font-bold text-brand-gold underline">{STUDIO_UPI_ID}</button></p>
+                                </div>
+                              )
                             )}
                           </div>
                         ))
